@@ -43,6 +43,8 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 - `noise_settings` JSON 的 `spawn_target` 与 `surface_rule` 是必填键；`minecraft:noise` 密度函数需显式 `xz_scale`/`y_scale`。
 - mappings：`ChunkStatus` 在 `net.minecraft.world.level.chunk.status`；`Level` 最低 y 用 `getMinBuildHeight()`（`minY()` 属于 `DimensionType`）；NeoForge 事件订阅注解是独立类 `net.neoforged.fml.common.EventBusSubscriber`（`Mod.EventBusSubscriber` 不存在），`bus` 属性已废弃（默认 GAME）。
 - 1.21.1 目录名：掉落表 `loot_table/`（单数）、tag `tags/block/`（单数）。
+- **岩浆海陷阱**：`NoiseBasedChunkGenerator` 的全局流体 picker 与 `aquifers_enabled` 无关——`y < min(-54, sea_level)` 的空腔无条件填岩浆。自定义维度若 `min_y < -54`，必须把 `sea_level` 设为 ≤`min_y` 才能避免虚空底部变岩浆海（原版 end 因 min_y=0 侥幸无事）。
+- 1.21.1 的 `ChunkStatus` 已无 `HEIGHTMAP`；`SURFACE` 是首个地形高度可信的状态。
 - NeoForge FML 类不在 `neoforge-21.1.248-merged.jar`，在 `~/.gradle/caches/modules-2/files-2.1/net.neoforged.fancymodloader/loader/4.0.43/.../loader-4.0.43.jar`。
 
 ## 设计红线（违反即打回）

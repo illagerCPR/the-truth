@@ -45,11 +45,16 @@ public final class TheTruthDebugCommands {
             context.getSource().sendFailure(Component.literal("Certus dimension is not loaded"));
             return 0;
         }
-        final int x = 8;
-        final int z = 8;
-        final double y = findStandingY(certus, x, z);
-        return teleport(context.getSource(), certus, x + 0.5, y, z + 0.5, "Teleported to Certus at "
-            + x + ", " + (int) y + ", " + z);
+        // The horizontal island mask leaves many columns fully void, so never
+        // assume the origin column is solid: spiral outwards until one holds.
+        final BlockPos arrival = findArrivalColumn(certus, 8, 8);
+        if (arrival == null) {
+            context.getSource().sendFailure(Component.literal("No solid column found within 12 chunks of origin"));
+            return 0;
+        }
+        return teleport(context.getSource(), certus, arrival.getX() + 0.5, arrival.getY(),
+            arrival.getZ() + 0.5, "Teleported to Certus at " + arrival.getX() + ", "
+                + arrival.getY() + ", " + arrival.getZ());
     }
 
     private static int teleportToOverworld(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -59,9 +64,13 @@ public final class TheTruthDebugCommands {
             return 0;
         }
         final BlockPos spawn = overworld.getSharedSpawnPos();
-        final double y = findStandingY(overworld, spawn.getX(), spawn.getZ());
-        return teleport(context.getSource(), overworld, spawn.getX() + 0.5, y, spawn.getZ() + 0.5,
-            "Returned to the Overworld spawn");
+        final BlockPos arrival = findArrivalColumn(overworld, spawn.getX(), spawn.getZ());
+        if (arrival == null) {
+            context.getSource().sendFailure(Component.literal("No safe column found near world spawn"));
+            return 0;
+        }
+        return teleport(context.getSource(), overworld, arrival.getX() + 0.5, arrival.getY(),
+            arrival.getZ() + 0.5, "Returned to the Overworld spawn");
     }
 
     private static int teleport(final CommandSourceStack source, final ServerLevel level,
@@ -74,10 +83,40 @@ public final class TheTruthDebugCommands {
     }
 
     /**
-     * Standing height at a column. Forces the chunk to FULL status first (an
-     * un-generated chunk reports a preliminary heightmap, which previously made
-     * the teleport land inside solid stone), then scans downwards for the first
-     * solid block with two air blocks above it.
+     * Spirals outwards from the center column in 16-block steps and returns the
+     * first column whose surface can be stood on (as {@code BlockPos} of the
+     * standing position), or null when a 25x25-chunk area holds nothing.
+     *
+     * <p>Empty columns are cheap-skipped at {@link ChunkStatus#SURFACE} before
+     * paying for a FULL generation and block scan.
+     */
+    private static BlockPos findArrivalColumn(final ServerLevel level, final int centerX, final int centerZ) {
+        for (int radius = 0; radius <= 12; radius++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) {
+                        continue;
+                    }
+                    final int x = centerX + dx * 16;
+                    final int z = centerZ + dz * 16;
+                    level.getChunk(x >> 4, z >> 4, ChunkStatus.SURFACE, true);
+                    if (level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) <= level.getMinBuildHeight()) {
+                        continue;
+                    }
+                    final double y = findStandingY(level, x, z);
+                    if (y >= 0.0) {
+                        return new BlockPos(x, (int) y, z);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Standing height at a column, or -1 when none exists. Forces the chunk to
+     * FULL status first (an un-generated chunk reports a preliminary heightmap),
+     * then scans downwards for the first solid block with two air blocks above it.
      */
     private static double findStandingY(final ServerLevel level, final int x, final int z) {
         level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
@@ -93,6 +132,6 @@ public final class TheTruthDebugCommands {
                 return y + 1.0;
             }
         }
-        return 128.0;
+        return -1.0;
     }
 }
