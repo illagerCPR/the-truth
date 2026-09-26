@@ -8,24 +8,29 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.NoiseRouter;
+import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * M1 dimension skeleton tests.
  *
- * <p>Vanilla {@code GameTestServer.create} hard-codes the FLAT world preset and
- * discards datapack LevelStem JSON, so a datapack dimension can never be
- * instantiated inside a GameTest server. The mechanics are therefore verified
- * one layer down: the datapack worldgen registries must parse and expose the
- * Certus entries, and the density function must sample solid core / floating
- * fringe / void exactly as designed. Entering the dimension ("see terrain,
- * re-enter stably") stays a manual runClient acceptance step.
+ * <p>Two engine facts shape what can be asserted here (both recorded in
+ * docs/02-开发计划.md): vanilla {@code GameTestServer.create} hard-codes the FLAT
+ * world preset and discards datapack LevelStem JSON, so a datapack dimension can
+ * never be instantiated inside a GameTest server; and {@code interpolated} /
+ * {@code flat_cache} density nodes degrade to 0 when a density function is
+ * sampled directly with {@link DensityFunction.SinglePointContext} outside a
+ * NoiseChunk. The density assertions therefore verify the arithmetic shell of
+ * the density tree, while a direct NormalNoise sample proves the island-mask
+ * noise actually varies (the real void gaps of the terrain). Seeing the actual
+ * fragment islands stays a manual runClient acceptance step.
  */
 @GameTestHolder(TheTruth.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -34,6 +39,7 @@ public final class TheTruthDimensionTests {
     private static final ResourceKey<DimensionType> CERTUS_DIMENSION_TYPE = key(Registries.DIMENSION_TYPE, "certus");
     private static final ResourceKey<Biome> CERTUS_DEBRIS_BIOME = key(Registries.BIOME, "certus_debris");
     private static final ResourceKey<NoiseGeneratorSettings> CERTUS_NOISE_SETTINGS = key(Registries.NOISE_SETTINGS, "certus");
+    private static final ResourceKey<NormalNoise.NoiseParameters> CERTUS_ISLANDS_NOISE = key(Registries.NOISE, "certus_islands");
 
     private TheTruthDimensionTests() {
     }
@@ -83,23 +89,49 @@ public final class TheTruthDimensionTests {
         }
         final NoiseRouter router = settings.noiseRouter();
 
-        // Core shell (y 16..112): shell weight 1.0, min density = 2.0 - 1.0 > 0 → always solid.
-        if (!(sample(router, 8, 64, 8) > 0.0)) {
-            helper.fail("Certus core at (8,64,8) is not solid");
+        // Below the rise band the density is multiplied by exactly 0 → empty.
+        if (sample(router, 8, -60, 8) > 0.0) {
+            helper.fail("Certus below-void at (8,-60,8) is not empty");
             return;
         }
-        // Floating fringe (fall band): shell 0.78125 at y=140 keeps density > 0.
-        if (!(sample(router, 8, 140, 8) > 0.0)) {
-            helper.fail("Certus fringe at (8,140,8) is not solid");
-            return;
-        }
-        // Void below the rise band and above the fall band: shell is exactly 0.
-        if (Math.abs(sample(router, 8, -60, 8)) > 1.0E-9) {
-            helper.fail("Certus below-void at (8,-60,8) is not empty: " + sample(router, 8, -60, 8));
-            return;
-        }
-        if (Math.abs(sample(router, 8, 300, 8)) > 1.0E-9) {
+        // Above the top-bias band the shell term pulls the density to -3 → empty.
+        if (!(sample(router, 8, 300, 8) < 0.0)) {
             helper.fail("Certus sky at (8,300,8) is not empty");
+            return;
+        }
+        // Mid shell: with both noise nodes degraded to 0 the stub value is
+        // rise(1.0) * (clamp(0.15)*(2+0) + bias(0)) = 0.30 → solid; this proves
+        // the density tree keeps its mid-band positive.
+        if (!(sample(router, 8, 64, 8) > 0.0)) {
+            helper.fail("Certus core at (8,64,8) has non-positive stub density: "
+                + sample(router, 8, 64, 8));
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "smoke")
+    public static void certusIslandNoiseVaries(final GameTestHelper helper) {
+        final RegistryAccess access = helper.getLevel().getServer().registryAccess();
+        final NormalNoise.NoiseParameters islands = access.registryOrThrow(Registries.NOISE).get(CERTUS_ISLANDS_NOISE);
+        if (islands == null) {
+            helper.fail("noise thetruth:certus_islands failed to load");
+            return;
+        }
+        // Fixed seed keeps the assertion deterministic; the mask threshold sits
+        // near zero, so any meaningful amplitude produces both solid columns and
+        // void gaps during real generation.
+        final NormalNoise noise = NormalNoise.create(RandomSource.create(0L), islands);
+        double min = Double.MAX_VALUE;
+        double max = -Double.MAX_VALUE;
+        for (int x = -256; x <= 256; x += 8) {
+            final double value = noise.getValue(x, 0, 0);
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+        if (max - min < 0.1) {
+            helper.fail("Island mask noise is near-constant (range " + (max - min)
+                + "); real terrain would not fragment");
             return;
         }
         helper.succeed();

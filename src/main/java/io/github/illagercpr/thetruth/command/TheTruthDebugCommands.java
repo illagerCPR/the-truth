@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -46,7 +47,7 @@ public final class TheTruthDebugCommands {
         }
         final int x = 8;
         final int z = 8;
-        final double y = surfaceY(certus, x, z);
+        final double y = findStandingY(certus, x, z);
         return teleport(context.getSource(), certus, x + 0.5, y, z + 0.5, "Teleported to Certus at "
             + x + ", " + (int) y + ", " + z);
     }
@@ -58,7 +59,7 @@ public final class TheTruthDebugCommands {
             return 0;
         }
         final BlockPos spawn = overworld.getSharedSpawnPos();
-        final double y = surfaceY(overworld, spawn.getX(), spawn.getZ());
+        final double y = findStandingY(overworld, spawn.getX(), spawn.getZ());
         return teleport(context.getSource(), overworld, spawn.getX() + 0.5, y, spawn.getZ() + 0.5,
             "Returned to the Overworld spawn");
     }
@@ -72,9 +73,26 @@ public final class TheTruthDebugCommands {
         return 1;
     }
 
-    /** Standing height at a column; falls back to y=128 while the chunk has no surface yet. */
-    private static double surfaceY(final ServerLevel level, final int x, final int z) {
-        final int height = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-        return height <= level.getMinBuildHeight() ? 128.0 : height + 1.0;
+    /**
+     * Standing height at a column. Forces the chunk to FULL status first (an
+     * un-generated chunk reports a preliminary heightmap, which previously made
+     * the teleport land inside solid stone), then scans downwards for the first
+     * solid block with two air blocks above it.
+     */
+    private static double findStandingY(final ServerLevel level, final int x, final int z) {
+        level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
+        final int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+        final int start = top > level.getMinBuildHeight()
+            ? top
+            : level.getMaxBuildHeight() - 1;
+        for (int y = start; y > level.getMinBuildHeight(); y--) {
+            final BlockPos pos = new BlockPos(x, y, z);
+            if (!level.getBlockState(pos).isAir()
+                && level.getBlockState(pos.above()).isAir()
+                && level.getBlockState(pos.above(2)).isAir()) {
+                return y + 1.0;
+            }
+        }
+        return 128.0;
     }
 }

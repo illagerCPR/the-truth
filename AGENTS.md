@@ -4,7 +4,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 当前状态（2026-09-26）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）已完成**：M1 交付确界维度 JSON + noise_settings 地形 + `certus_stone` 方块 + `/thetruthdebug` 调试命令 + GameTest 3 项全绿。下一批次 **M2（地形与观测周期）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）已完成**：M1 交付确界维度 JSON + noise_settings 碎片岛地形 + `certus_stone` 方块 + `/thetruthdebug` 调试命令 + GameTest 4 项全绿（传送落点与平板地形两处首验缺陷已修复）。下一批次 **M2（地形与观测周期）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -39,7 +39,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## M1 核对的 1.21.1 硬事实（2026-09-26）
 
-- **vanilla `GameTestServer.create` 硬编码 `WorldPresets.FLAT` 并丢弃 datapack 的 LevelStem**——GameTest 环境永远无法实例化 datapack 维度（`server.getLevel` 返回 null）。维度机制测试改走：worldgen registry 加载断言 + `NoiseRouter.finalDensity().compute(SinglePointContext)` 纯函数采样。
+- **vanilla `GameTestServer.create` 硬编码 `WorldPresets.FLAT` 并丢弃 datapack 的 LevelStem**——GameTest 环境永远无法实例化 datapack 维度（`server.getLevel` 返回 null）。维度机制测试改走：worldgen registry 加载断言 + `NoiseRouter.finalDensity().compute(SinglePointContext)` 纯函数采样。**`interpolated`/`flat_cache` 密度节点在 NoiseChunk 之外单点采样时退化为 0**——单点采样只测得到密度树算术壳；验证绑定节点用固定种子直接采样 `NormalNoise`。
 - `noise_settings` JSON 的 `spawn_target` 与 `surface_rule` 是必填键；`minecraft:noise` 密度函数需显式 `xz_scale`/`y_scale`。
 - mappings：`ChunkStatus` 在 `net.minecraft.world.level.chunk.status`；`Level` 最低 y 用 `getMinBuildHeight()`（`minY()` 属于 `DimensionType`）；NeoForge 事件订阅注解是独立类 `net.neoforged.fml.common.EventBusSubscriber`（`Mod.EventBusSubscriber` 不存在），`bus` 属性已废弃（默认 GAME）。
 - 1.21.1 目录名：掉落表 `loot_table/`（单数）、tag `tags/block/`（单数）。
