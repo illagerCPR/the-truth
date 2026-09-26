@@ -22,7 +22,7 @@
   "thetruth.message.entrance.key_mismatch": "这把钥匙与核心的纠缠对不匹配",
   "thetruth.message.entrance.no_arrival": "未找到可用的落点",
   "thetruth.message.entrance.no_home_level": "钥匙记忆的主世界维度不可达",
-  "thetruth.message.entrance.bound": "纠缠对已建立：一枚留在此核心，一枚随你被存储",
+  "thetruth.message.entrance.bound": "纠缠对已建立：这把钥匙已与此核心纠缠",
   "thetruth.message.entrance.transporting": "正在存储并传输……",
   "thetruth.message.entrance.spawn_denied": "确界拒绝记录你的位置",
   "thetruth.message.entrance.remnant_name": "数据残片",

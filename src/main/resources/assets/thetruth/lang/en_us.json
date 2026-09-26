@@ -22,7 +22,7 @@
   "thetruth.message.entrance.key_mismatch": "This key does not match the core's entanglement pair",
   "thetruth.message.entrance.no_arrival": "No viable arrival point was found",
   "thetruth.message.entrance.no_home_level": "The key's home dimension is unreachable",
-  "thetruth.message.entrance.bound": "Entanglement pair minted: one key stays with this core, one travels with you",
+  "thetruth.message.entrance.bound": "Entanglement pair established: this key is now bound to this core",
   "thetruth.message.entrance.transporting": "Storing and transmitting...",
   "thetruth.message.entrance.spawn_denied": "Certus refuses to record your position",
   "thetruth.message.entrance.remnant_name": "Data Remnant",

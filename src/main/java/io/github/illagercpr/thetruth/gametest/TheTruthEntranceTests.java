@@ -121,7 +121,7 @@ public final class TheTruthEntranceTests {
                     "the held key must carry pair data (corePair=" + core.getPairId() + ")");
                 check(helper, core.getPairId() != null && core.getPairId().equals(pair.pairId()),
                     "the core must record the same pair id");
-                // The second key of the pair went to the mock player's inventory.
+                // No second key is minted: the pair is core <-> held key.
                 int boundKeys = 0;
                 for (int i = 0; i < mock.getInventory().getContainerSize(); i++) {
                     final ItemStack stack = mock.getInventory().getItem(i);
@@ -131,8 +131,8 @@ public final class TheTruthEntranceTests {
                         boundKeys++;
                     }
                 }
-                check(helper, boundKeys == 1,
-                    "exactly one additional bound key must be handed over, got " + boundKeys);
+                check(helper, boundKeys == 0,
+                    "no additional key must be handed over, got " + boundKeys);
             })
             .thenSucceed();
     }

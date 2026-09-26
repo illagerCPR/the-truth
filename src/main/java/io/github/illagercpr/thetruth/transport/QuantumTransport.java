@@ -95,9 +95,10 @@ public final class QuantumTransport {
     }
 
     /**
-     * Runs the binding ritual: the core mints a pair id, the held key receives
-     * the pair data, and a second key of the pair is handed to the player (one
-     * stays at the core, one travels with the player, docs/00 section 5.1).
+     * Runs the binding ritual: the core mints a pair id and the held key
+     * receives the pair data. The entangled pair is core &lt;-&gt; key: the
+     * core itself is the singularity that stays behind, the held key is the
+     * one that gets stored and transmitted (docs/00 section 5.1 revision).
      * Rebinding overwrites the previous pair (recovery path for lost keys).
      */
     @Nullable
@@ -121,12 +122,6 @@ public final class QuantumTransport {
         final var pair = new EntanglementPairData(core.getPairId(),
             core.getLevel().dimension().location(), core.getBlockPos());
         key.set(TheTruthDataComponents.ENTANGLEMENT_PAIR.get(), pair);
-
-        final ItemStack second = new ItemStack(key.getItem());
-        second.set(TheTruthDataComponents.ENTANGLEMENT_PAIR.get(), pair);
-        if (!player.getInventory().add(second)) {
-            player.drop(second, false);
-        }
 
         player.displayClientMessage(Component.translatable("thetruth.message.entrance.bound"), false);
         return null;
