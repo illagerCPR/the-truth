@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -99,8 +100,12 @@ public final class TheTruthDebugCommands {
                     }
                     final int x = centerX + dx * 16;
                     final int z = centerZ + dz * 16;
-                    level.getChunk(x >> 4, z >> 4, ChunkStatus.SURFACE, true);
-                    if (level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) <= level.getMinBuildHeight()) {
+                    // Cheap pre-filter: SURFACE chunks only carry the *_WG
+                    // worldgen heightmaps (FINAL heightmaps start at CARVERS),
+                    // so query WORLD_SURFACE_WG directly on the proto chunk.
+                    final ChunkAccess proto = level.getChunk(x >> 4, z >> 4, ChunkStatus.SURFACE, true);
+                    if (proto.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x & 15, z & 15)
+                        <= level.getMinBuildHeight()) {
                         continue;
                     }
                     final double y = findStandingY(level, x, z);
