@@ -1,0 +1,83 @@
+{
+  "sea_level": 0,
+  "disable_mob_generation": false,
+  "aquifers_enabled": false,
+  "ore_veins_enabled": false,
+  "legacy_random_source": false,
+  "default_block": {
+    "Name": "thetruth:certus_stone"
+  },
+  "default_fluid": {
+    "Name": "minecraft:air"
+  },
+  "noise": {
+    "min_y": -64,
+    "height": 320,
+    "size_horizontal": 1,
+    "size_vertical": 2
+  },
+  "spawn_target": [],
+  "noise_router": {
+    "barrier": 0.0,
+    "fluid_level_floodedness": 0.0,
+    "fluid_level_spread": 0.0,
+    "lava": 0.0,
+    "temperature": 0.0,
+    "vegetation": 0.0,
+    "continents": 0.0,
+    "erosion": 0.0,
+    "depth": 0.0,
+    "ridges": 0.0,
+    "initial_density_without_jaggedness": {
+      "type": "minecraft:add",
+      "argument1": 2.0,
+      "argument2": {
+        "type": "minecraft:y_clamped_gradient",
+        "from_y": 112,
+        "to_y": 240,
+        "from_value": 1.0,
+        "to_value": 0.0
+      }
+    },
+    "final_density": {
+      "type": "minecraft:mul",
+      "argument1": {
+        "type": "minecraft:mul",
+        "argument1": {
+          "type": "minecraft:y_clamped_gradient",
+          "from_y": -48,
+          "to_y": 16,
+          "from_value": 0.0,
+          "to_value": 1.0
+        },
+        "argument2": {
+          "type": "minecraft:y_clamped_gradient",
+          "from_y": 112,
+          "to_y": 240,
+          "from_value": 1.0,
+          "to_value": 0.0
+        }
+      },
+      "argument2": {
+        "type": "minecraft:add",
+        "argument1": 2.0,
+        "argument2": {
+          "type": "minecraft:interpolated",
+          "argument": {
+            "type": "minecraft:noise",
+            "noise": "thetruth:certus_terrain",
+            "xz_scale": 1.0,
+            "y_scale": 1.0
+          }
+        }
+      }
+    },
+    "vein_toggle": 0.0,
+    "vein_ridged": 0.0,
+    "vein_gap": 0.0
+  },
+  "surface_rule": {
+    "type": "minecraft:sequence",
+    "sequence": []
+  }
+}

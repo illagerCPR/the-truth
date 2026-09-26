@@ -4,7 +4,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 当前状态（2026-09-26）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）已完成**：build 产出 jar、GameTest 冒烟测试通过、AE2 + GuideME 在 dev 环境同载确认。下一批次 **M1（维度骨架）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）已完成**：M1 交付确界维度 JSON + noise_settings 地形 + `certus_stone` 方块 + `/thetruthdebug` 调试命令 + GameTest 3 项全绿。下一批次 **M2（地形与观测周期）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -14,7 +14,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 环境陷阱（必读）
 
-- **WSL2 MTU 黑洞（2026-09-26 实锤，首个大坑）**：`eth2` MTU 1500 时，超过 ~1400 字节的包在直连链路上被静默丢弃且 ICMP 分片通知时通时断——表现为**大文件下载随机永久卡死**（小文件正常、连接堆积 CLOSE-WAIT、进度零推进、NRT 挂死）。诊断：`ping -4 -M do -s 1472 <host>` 全丢即实锤。修复（WSL 重启后失效需重跑）：`sudo ip link set dev eth2 mtu 1400`。
+- **WSL2 MTU 黑洞（2026-09-26 实锤，首个大坑）**：镜像网络模式下 eth 网卡 MTU 1500 时，超过 ~1400 字节的包被静默丢弃且 ICMP 分片通知时通时断——表现为**大文件下载随机永久卡死**（小文件正常、连接堆积 CLOSE-WAIT、进度零推进、NRT 挂死）。诊断：`ping -4 -M do -s 1472 <host>` 全丢即实锤。**已持久化修复**：`/usr/local/sbin/wsl-fix-mtu.sh`（遍历所有 `eth*` 设 MTU 1400，幂等）经 `/etc/wsl.conf` `[boot] command` 随 WSL 启动自动执行，WSL 重启后依然生效，无需手动重跑；手动补设：`sudo /usr/local/sbin/wsl-fix-mtu.sh`。
 - **反代与 maven 下载无关**：`S302_rules.ini` 只含 `github=1` 等域，**不含任何 maven 域名**。所以 Gradle 拉依赖卡住时先查 MTU（上条），不是反代。反代的真实危害是 MITM github 域名用自签证书——Java 报 `PKIX path building failed` 才轮到它：需要访问 github 的构建步骤前提醒用户**关闭**反代，完成后提醒重新开启（保证 gh/git 稳定）。
 - 系统无 `java` 命令；JDK 21 在 `~/.gradle/jdks/jdk-21.0.12.1+1`（构建命令须 `export JAVA_HOME` 指向它）。Gradle 8.8 wrapper 发行版已缓存。
 - **GameTest 结构模板必须二进制 `.nbt`**：数据包路线只读 `data/<ns>/structure/*.nbt`（gzip NBT），`.snbt` 仅在 IDE 的 `gameteststructures/` 平铺目录生效且命名空间被丢弃；`tryLoad` 静默吞异常，解析失败与缺失都报 "Missing test structure"。空模板用 `python3 tools/make_empty_structure.py` 生成。
@@ -36,6 +36,14 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 免下载核对任意类的真实签名：读本机 `~/.gradle/caches/neoformruntime/intermediate_results/compiledWithNeoForge_*_output.jar`，然后执行
 `~/.gradle/jdks/jdk-21.0.12.1+1/bin/javap -cp <jar> <全限定类名>`。
+
+## M1 核对的 1.21.1 硬事实（2026-09-26）
+
+- **vanilla `GameTestServer.create` 硬编码 `WorldPresets.FLAT` 并丢弃 datapack 的 LevelStem**——GameTest 环境永远无法实例化 datapack 维度（`server.getLevel` 返回 null）。维度机制测试改走：worldgen registry 加载断言 + `NoiseRouter.finalDensity().compute(SinglePointContext)` 纯函数采样。
+- `noise_settings` JSON 的 `spawn_target` 与 `surface_rule` 是必填键；`minecraft:noise` 密度函数需显式 `xz_scale`/`y_scale`。
+- mappings：`ChunkStatus` 在 `net.minecraft.world.level.chunk.status`；`Level` 最低 y 用 `getMinBuildHeight()`（`minY()` 属于 `DimensionType`）；NeoForge 事件订阅注解是独立类 `net.neoforged.fml.common.EventBusSubscriber`（`Mod.EventBusSubscriber` 不存在），`bus` 属性已废弃（默认 GAME）。
+- 1.21.1 目录名：掉落表 `loot_table/`（单数）、tag `tags/block/`（单数）。
+- NeoForge FML 类不在 `neoforge-21.1.248-merged.jar`，在 `~/.gradle/caches/modules-2/files-2.1/net.neoforged.fancymodloader/loader/4.0.43/.../loader-4.0.43.jar`。
 
 ## 设计红线（违反即打回）
 
