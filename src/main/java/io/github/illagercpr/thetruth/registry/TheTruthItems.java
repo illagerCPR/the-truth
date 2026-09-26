@@ -13,6 +13,9 @@ public final class TheTruthItems {
     public static final DeferredItem<BlockItem> CERTUS_STONE =
         ITEMS.registerSimpleBlockItem("certus_stone", TheTruthBlocks.CERTUS_STONE);
 
+    public static final DeferredItem<BlockItem> CERTUS_ANCHOR =
+        ITEMS.registerSimpleBlockItem("certus_anchor", TheTruthBlocks.CERTUS_ANCHOR);
+
     private TheTruthItems() {
     }
 }

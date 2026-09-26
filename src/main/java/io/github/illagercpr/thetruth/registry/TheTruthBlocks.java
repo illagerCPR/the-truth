@@ -1,6 +1,7 @@
 package io.github.illagercpr.thetruth.registry;
 
 import io.github.illagercpr.thetruth.TheTruth;
+import io.github.illagercpr.thetruth.block.CertusAnchorBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -28,6 +29,10 @@ public final class TheTruthBlocks {
             .requiresCorrectToolForDrops()
             .strength(2.0F, 9.0F)
             .sound(SoundType.DEEPSLATE));
+
+    /** Certus Anchor: projects the deterministic coverage field while powered. */
+    public static final DeferredBlock<CertusAnchorBlock> CERTUS_ANCHOR =
+        BLOCKS.register("certus_anchor", CertusAnchorBlock::new);
 
     private TheTruthBlocks() {
     }

@@ -1,11 +1,16 @@
 package io.github.illagercpr.thetruth.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.illagercpr.thetruth.TheTruth;
+import io.github.illagercpr.thetruth.coverage.CertaintyCoverage;
 import io.github.illagercpr.thetruth.cycle.ObservationCycle;
+import io.github.illagercpr.thetruth.registry.TheTruthAttachments;
 import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
+import io.github.illagercpr.thetruth.uncertainty.UncertaintyCurve;
+import io.github.illagercpr.thetruth.uncertainty.UncertaintyData;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -39,7 +44,14 @@ public final class TheTruthDebugCommands {
             .requires(source -> source.hasPermission(2))
             .then(Commands.literal("certus").executes(TheTruthDebugCommands::teleportToCertus))
             .then(Commands.literal("overworld").executes(TheTruthDebugCommands::teleportToOverworld))
-            .then(Commands.literal("cycle").executes(TheTruthDebugCommands::showObservationCycle)));
+            .then(Commands.literal("cycle").executes(TheTruthDebugCommands::showObservationCycle))
+            .then(Commands.literal("uncertainty")
+                .executes(TheTruthDebugCommands::showUncertainty)
+                .then(Commands.literal("set")
+                    .then(Commands.argument("value", IntegerArgumentType.integer(0,
+                        UncertaintyCurve.CAP))
+                        .executes(TheTruthDebugCommands::setUncertainty)))
+                .then(Commands.literal("reset").executes(TheTruthDebugCommands::resetUncertainty))));
     }
 
     private static int teleportToCertus(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -96,6 +108,42 @@ public final class TheTruthDebugCommands {
             ObservationCycle.mapToSkyPhase(cycleTick),
             certus.getDayTime());
         context.getSource().sendSuccess(() -> Component.literal(status), false);
+        return 1;
+    }
+
+    /**
+     * Prints the caller's uncertainty state: value, curve layer, coverage
+     * verdict with its source, and any open deep-layer warning window. The
+     * "set"/"reset" sub-commands let acceptance testing jump straight to a
+     * desired state instead of waiting for accumulation.
+     */
+    private static int showUncertainty(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        final ServerPlayer player = context.getSource().getPlayerOrException();
+        final UncertaintyData data = player.getData(TheTruthAttachments.UNCERTAINTY.get());
+        final UncertaintyCurve.Layer layer = UncertaintyCurve.layerOf(player.blockPosition().getY());
+        final String status = String.format(
+            "Uncertainty %d/%d | layer %s | covered %s (%s) | warning ticks left %d | next re-randomize %d",
+            data.uncertainty(), UncertaintyCurve.CAP, layer, data.covered(),
+            CertaintyCoverage.describeCoverage(player), data.warningTicksLeft(), data.nextRandomizeAt());
+        context.getSource().sendSuccess(() -> Component.literal(status), false);
+        return 1;
+    }
+
+    private static int setUncertainty(final CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        final ServerPlayer player = context.getSource().getPlayerOrException();
+        final int value = IntegerArgumentType.getInteger(context, "value");
+        final UncertaintyData current = player.getData(TheTruthAttachments.UNCERTAINTY.get());
+        player.setData(TheTruthAttachments.UNCERTAINTY.get(), current.withUncertainty(value));
+        context.getSource().sendSuccess(() -> Component.literal("Uncertainty set to " + value), false);
+        return 1;
+    }
+
+    private static int resetUncertainty(final CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        final ServerPlayer player = context.getSource().getPlayerOrException();
+        player.setData(TheTruthAttachments.UNCERTAINTY.get(), UncertaintyData.DEFAULT);
+        context.getSource().sendSuccess(() -> Component.literal("Uncertainty state reset"), false);
         return 1;
     }
 

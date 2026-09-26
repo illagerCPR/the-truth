@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "thetruth:certus_stone"
+    "thetruth:certus_stone",
+    "thetruth:certus_anchor"
   ]
 }

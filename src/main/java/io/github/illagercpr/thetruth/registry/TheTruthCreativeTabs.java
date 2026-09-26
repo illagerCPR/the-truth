@@ -18,7 +18,10 @@ public final class TheTruthCreativeTabs {
         () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.thetruth.main"))
             .icon(() -> new ItemStack(TheTruthItems.CERTUS_STONE.get()))
-            .displayItems((parameters, output) -> output.accept(TheTruthItems.CERTUS_STONE.get()))
+            .displayItems((parameters, output) -> {
+                output.accept(TheTruthItems.CERTUS_STONE.get());
+                output.accept(TheTruthItems.CERTUS_ANCHOR.get());
+            })
             .build());
 
     private TheTruthCreativeTabs() {

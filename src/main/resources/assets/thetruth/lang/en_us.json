@@ -1,4 +1,12 @@
 {
   "block.thetruth.certus_stone": "Certus Stone",
-  "itemGroup.thetruth.main": "The Truth"
+  "block.thetruth.certus_anchor": "Certus Anchor",
+  "itemGroup.thetruth.main": "The Truth",
+  "thetruth.message.randomized": "Uncertainty overload: stack sizes destabilized",
+  "thetruth.message.restored": "Certainty restored: stack sizes settled back",
+  "thetruth.message.warning_open": "SALVAGE WINDOW OPEN — get under coverage or lose your items!",
+  "thetruth.message.warning_tick": "Uncovered deletion in %s s",
+  "thetruth.message.warning_cancelled": "Deletion window cancelled: left Certus",
+  "thetruth.message.salvaged": "Coverage restored: your items were saved",
+  "thetruth.message.deleted": "The unobserved world deleted your items"
 }

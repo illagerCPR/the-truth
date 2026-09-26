@@ -4,7 +4,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 当前状态（2026-09-26）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）已完成**：M2 交付自写 `CertusChunkGenerator`（三层精确地形 + 48 格网格缺口 + 垂直分层 biome）+ `ObservationCycle` 观测周期状态机（服务端重写 dayTime 驱动原版天空）+ 客户端 `DimensionSpecialEffects`（观测期冷白雾 / 未观测期近黑雾），GameTest 11 项全绿。下一批次 **M3（确定性覆盖与不稳定曲线）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）已完成**：M3 交付覆盖判定服务（确界锚点确定性场 + AE2 无线接入点 chunk 扫描）+ 玩家不确定度（Data Attachment 自动同步）+ 三级曲线（表层教学 / 中层随机化可恢复 / 深层 4 s 预警窗口可挽救）+ 客户端噪点闪烁 overlay + `CertusAnchorBlockEntity`（AE2 网络节点，idle 16 AE/t，半径 16 格确定性场），GameTest 17 项全绿。下一批次 **M4（入口与回程）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -57,6 +57,20 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 - **NeoForge 自定义维度效果**：`RegisterDimensionSpecialEffectsEvent`（client mod bus）按 dimension_type 的 effects id 注册 `DimensionSpecialEffects`；订阅走主类构造器 `dist.isClient()` 守卫 + `modEventBus.addListener(EventClass.class, clientClass::method)`，避免 dedicated server 加载 `@OnlyIn(CLIENT)` 类。
 - 注册 `Registries.CHUNK_GENERATOR`（Registry<MapCodec<? extends ChunkGenerator>>）用 `DeferredRegister.create(Registries.CHUNK_GENERATOR, modid)`，元素为 codec。
 - 「观测期缺口收窄 / 未观测期扩张」的几何演化未实现（已生成区块不会随函数重算）：M2 交付光/雾/天氛围层周期差异，几何演化推迟到 M3+ 与方块变更基建一起评估。
+
+## M3 核对的硬事实（2026-09-26，AE2 节点接入三连坑都在这）
+
+- **附属自写 ME 设备（不碰 AE2 内部基类）的正确姿势**：BE 实现 `IActionHost + IInWorldGridNodeHost`，节点用 `GridHelper.createManagedNode(host, listener)` 链式 `setInWorldNode(true)` + `setIdlePowerUsage(n)`；`IActionHost#getActionableNode`、`IInWorldGridNodeHost#getGridNode` 都返回 `mainNode.getNode()`。
+- **坑 1：`ManagedGridNode` 默认 `inWorldNode = false`**——不显式 `setInWorldNode(true)` 时节点是纯逻辑 GridNode：没有邻接发现、邻居也发现不了它（`getExposedNode` 里 `instanceof InWorldGridNode` 直接失败），表现为"节点存在但永远 0 连接"。
+- **坑 2：AE2 邻接发现走 NeoForge capability 而非 instanceof**：`GridHelper.getNodeHost` = `level.getCapability(AECapabilities.IN_WORLD_GRID_NODE_HOST, pos, null)`。只实现接口不注册 capability = 邻居永远扫不到你。注册：mod bus `RegisterCapabilitiesEvent.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, BE_TYPE, (be, side) -> be)`。
+- **坑 3：`GridHelper.onFirstTick` 在注册时就解引用 `getLevel()`**（`TickHandler.addInit` 内 `getLevel().isClientSide()`）——BE 构造函数里调用必 NPE。正确做法：`onLoad()`（`ServerLevel` 守卫）里直接 `mainNode.create(level, pos)`；create 幂等（node 非 null 即 return）。
+- AE2 BE 自身节点创建时机：`clearRemoved() → scheduleInit()` → AE2 init 队列 → **下一 `LevelTickEvent.Post`** 的 `readyBlockEntities` 消费 `onReady`（前置条件 `ServerChunkCache.isPositionTicking(chunk)`，vanilla GameTest 区域满足）；节点连接建立于 `markReady → updateState → findInWorldConnections`。
+- vanilla `BlockEntity#onLoad()` 不在放置时同步调用——在下一 tick 的 `tickBlockEntities` 里对 `freshBlockEntities` 队列调用。
+- **NeoForge Data Attachment 自动同步**：`AttachmentType.builder(sup).serialize(Codec, Predicate).sync(StreamCodec)`——sync 目标含玩家本人（`AttachmentSync.syncEntityUpdate` 对 ServerPlayer 特判追加自己）+ 登录时 `syncInitialPlayerAttachments` 初始同步；仅 `setData/removeData` 触发发送。玩家死亡默认不拷贝 attachment（自然清零）。
+- `DimensionalBlockPos` 无 dimension 访问器，判同维度用 `isInWorld(LevelAccessor)`；`ChunkSource#getChunkNow(cx, cz)` 取已加载 chunk（null 不强载）。
+- 音效常量：`SoundEvents.AMETHYST_BLOCK_CHIME`（不存在 `AMETHYST_CLUSTER_CHIME`；`AMETHYST_CLUSTER_BREAK`、`WARDEN_HEARTBEAT`、`WARDEN_SONIC_BOOM` 存在）。mappings：`Util` 在 `net.minecraft` 顶层；`RandomSource` 在 `net.minecraft.util`。
+- **GameTest 隔离陷阱**：per-level 静态注册表跨测试 plot 共享（GameTest 世界各 plot 相距不远），世界级"负向"断言（如"此处不得被覆盖"）会被相邻 plot 的场污染——负向验证改为对被测 BE 自身断言；正向断言不受影响。
+- AE2 19.2.17 的 `IWirelessAccessPoint` 判定复用：接入点 BE 无法从 API 侧枚举，扫玩家周边 chunk 的 `LevelChunk#getBlockEntities()` 过滤接口即可（`DimensionalBlockPos.isInWorld` 判维度）。
 
 ## 设计红线（违反即打回）
 

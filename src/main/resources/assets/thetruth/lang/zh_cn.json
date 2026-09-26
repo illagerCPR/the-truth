@@ -1,4 +1,12 @@
 {
   "block.thetruth.certus_stone": "确界石",
-  "itemGroup.thetruth.main": "The Truth"
+  "block.thetruth.certus_anchor": "确界锚点",
+  "itemGroup.thetruth.main": "The Truth",
+  "thetruth.message.randomized": "不确定度超限：物品数量失稳",
+  "thetruth.message.restored": "确定性恢复：物品数量已复原",
+  "thetruth.message.warning_open": "挽回窗口开启——立即进入确定性覆盖，否则物品将被删除！",
+  "thetruth.message.warning_tick": "未覆盖物品将在 %s 秒后被删除",
+  "thetruth.message.warning_cancelled": "删除窗口已取消：已离开确界",
+  "thetruth.message.salvaged": "覆盖恢复：你的物品已被挽救",
+  "thetruth.message.deleted": "你的物品被未观测的世界删除了"
 }

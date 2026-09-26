@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 
 /**
  * Client-only bootstrap. Referenced from the mod constructor behind a
@@ -19,5 +20,9 @@ public final class TheTruthClient {
     public static void onRegisterDimensionSpecialEffects(final RegisterDimensionSpecialEffectsEvent event) {
         event.register(
             ResourceLocation.fromNamespaceAndPath(TheTruth.MOD_ID, "certus"), new CertusDimensionEffects());
+    }
+
+    public static void onRegisterGuiLayers(final RegisterGuiLayersEvent event) {
+        event.registerAboveAll(CertusUncertaintyOverlay.layerId(), new CertusUncertaintyOverlay());
     }
 }
