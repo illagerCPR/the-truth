@@ -1,0 +1,70 @@
+plugins {
+    id 'net.neoforged.moddev' version '2.0.147'
+}
+
+version = project.mod_version
+group = project.mod_group_id
+
+base {
+    archivesName = project.mod_id
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(project.java_version as Integer)
+    }
+}
+
+neoForge {
+    version = project.neoforge_version
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+        }
+        gameTestServer {
+            type = "gameTestServer"
+        }
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id,
+                    '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+    }
+
+    mods {
+        thetruth {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Applied Energistics 2 (full mod jar, needed to actually load AE2 in dev runs).
+    // GuideME (org.appliedenergistics:guideme) arrives transitively via AE2's POM.
+    implementation "org.appliedenergistics:appliedenergistics2:${project.ae2_version}"
+    // Optional: compile against the public API surface only.
+    compileOnly "org.appliedenergistics:appliedenergistics2:${project.ae2_version}:api"
+}
+
+tasks.processResources {
+    def expanded = [
+            'mod_version'           : project.mod_version,
+            'minecraft_version'     : project.minecraft_version,
+            'neoforge_version_range': project.neoforge_version_range,
+            'ae2_version_range'     : project.ae2_version_range
+    ]
+    inputs.properties(expanded)
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand expanded
+    }
+}
