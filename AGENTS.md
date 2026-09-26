@@ -4,7 +4,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 当前状态（2026-09-26）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）已完成**：M1 交付确界维度 JSON + noise_settings 碎片岛地形 + `certus_stone` 方块 + `/thetruthdebug` 调试命令 + GameTest 4 项全绿（传送落点与平板地形两处首验缺陷已修复）。下一批次 **M2（地形与观测周期）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）已完成**：M2 交付自写 `CertusChunkGenerator`（三层精确地形 + 48 格网格缺口 + 垂直分层 biome）+ `ObservationCycle` 观测周期状态机（服务端重写 dayTime 驱动原版天空）+ 客户端 `DimensionSpecialEffects`（观测期冷白雾 / 未观测期近黑雾），GameTest 11 项全绿。下一批次 **M3（确定性覆盖与不稳定曲线）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -46,6 +46,17 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 - **岩浆海陷阱**：`NoiseBasedChunkGenerator` 的全局流体 picker 与 `aquifers_enabled` 无关——`y < min(-54, sea_level)` 的空腔无条件填岩浆。自定义维度若 `min_y < -54`，必须把 `sea_level` 设为 ≤`min_y` 才能避免虚空底部变岩浆海（原版 end 因 min_y=0 侥幸无事）。
 - 1.21.1 的 `ChunkStatus` 已无 `HEIGHTMAP`；`SURFACE` 是首个地形高度可信的状态。
 - NeoForge FML 类不在 `neoforge-21.1.248-merged.jar`，在 `~/.gradle/caches/modules-2/files-2.1/net.neoforged.fancymodloader/loader/4.0.43/.../loader-4.0.43.jar`。
+
+## M2 核对的 1.21.1 硬事实（2026-09-26）
+
+- **自写 ChunkGenerator 的写块契约**（照抄 vanilla `NoiseBasedChunkGenerator#doFill`）：`chunk.getSection(chunk.getSectionIndex(y)).setBlockState(lx, y & 15, lz, state, false)` + `getOrCreateHeightmapUnprimed(OCEAN_FLOOR_WG / WORLD_SURFACE_WG).update(lx, y, lz, state)`——必须手动维护两个 `*_WG` heightmap，否则 SURFACE 状态的 heightmap 查询（传送落点预筛）全空。
+- **自写生成器的 biome 填充**：override `createBiomes`，调 `chunk.fillBiomesFromNoise(resolver, sampler)`；resolver 收到 **quart 坐标**（1 quart = 4 blocks，blockY = quartY << 2）；`StructureManager#registryAccess()` 可拿 registry。
+- `RandomState.create(HolderGetter.Provider, ...)` 第一参数是 **`HolderGetter.Provider`**（不是 `HolderLookup.Provider`，`RegistryAccess` 不实现前者）；按世界种子创建噪声的正统入口是 `RandomState#getOrCreateNoise(ResourceKey<NoiseParameters>)`（RandomState 为 per-level 单例，地形形状按其实例身份缓存）。
+- **GameTest 的 `LEVEL_STEM` registry 同样不含 datapack 维度 JSON**（与 FLAT preset 同根因）——generator codec 验证改走 DFU：`LevelStem.CODEC.parse(access.createSerializationContext(JsonOps.INSTANCE), 打包 JSON)`；`RegistryOps` 在 `net.minecraft.resources`。
+- **观测周期驱动**：`ServerLevel#setDayTime` 只覆盖 dayTime 不动 gameTime；以 `gameTime % 周期` 为状态源每 tick（`LevelTickEvent.Post`，`net.neoforged.neoforge.event.tick`）重写 dayTime，天空/天光/雾亮度等原版系统自动跟随——无状态可重入。
+- **NeoForge 自定义维度效果**：`RegisterDimensionSpecialEffectsEvent`（client mod bus）按 dimension_type 的 effects id 注册 `DimensionSpecialEffects`；订阅走主类构造器 `dist.isClient()` 守卫 + `modEventBus.addListener(EventClass.class, clientClass::method)`，避免 dedicated server 加载 `@OnlyIn(CLIENT)` 类。
+- 注册 `Registries.CHUNK_GENERATOR`（Registry<MapCodec<? extends ChunkGenerator>>）用 `DeferredRegister.create(Registries.CHUNK_GENERATOR, modid)`，元素为 codec。
+- 「观测期缺口收窄 / 未观测期扩张」的几何演化未实现（已生成区块不会随函数重算）：M2 交付光/雾/天氛围层周期差异，几何演化推迟到 M3+ 与方块变更基建一起评估。
 
 ## 设计红线（违反即打回）
 

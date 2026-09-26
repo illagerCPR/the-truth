@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.illagercpr.thetruth.TheTruth;
+import io.github.illagercpr.thetruth.cycle.ObservationCycle;
 import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -37,7 +38,8 @@ public final class TheTruthDebugCommands {
         dispatcher.register(Commands.literal("thetruthdebug")
             .requires(source -> source.hasPermission(2))
             .then(Commands.literal("certus").executes(TheTruthDebugCommands::teleportToCertus))
-            .then(Commands.literal("overworld").executes(TheTruthDebugCommands::teleportToOverworld)));
+            .then(Commands.literal("overworld").executes(TheTruthDebugCommands::teleportToOverworld))
+            .then(Commands.literal("cycle").executes(TheTruthDebugCommands::showObservationCycle)));
     }
 
     private static int teleportToCertus(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -72,6 +74,29 @@ public final class TheTruthDebugCommands {
         }
         return teleport(context.getSource(), overworld, arrival.getX() + 0.5, arrival.getY(),
             arrival.getZ() + 0.5, "Returned to the Overworld spawn");
+    }
+
+    /**
+     * Prints the current observation-cycle state of the Certus level. The
+     * transitions are 11.5 min apart, so a live readout beats waiting and
+     * squinting at the sky during manual acceptance.
+     */
+    private static int showObservationCycle(final CommandContext<CommandSourceStack> context) {
+        final ServerLevel certus = TheTruthDimensions.certusLevel(context.getSource().getServer());
+        if (certus == null) {
+            context.getSource().sendFailure(Component.literal("Certus dimension is not loaded"));
+            return 0;
+        }
+        final long cycleTick = ObservationCycle.cycleTick(certus.getGameTime());
+        final String status = String.format(
+            "Observation cycle: tick %d/%d, phase %s, blend %.3f, sky phase %d (level dayTime %d)",
+            cycleTick, ObservationCycle.CYCLE_TICKS,
+            ObservationCycle.phaseOf(cycleTick),
+            ObservationCycle.observationBlend(cycleTick),
+            ObservationCycle.mapToSkyPhase(cycleTick),
+            certus.getDayTime());
+        context.getSource().sendSuccess(() -> Component.literal(status), false);
+        return 1;
     }
 
     private static int teleport(final CommandSourceStack source, final ServerLevel level,

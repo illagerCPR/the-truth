@@ -1,8 +1,7 @@
 {
   "type": "thetruth:certus",
   "generator": {
-    "type": "minecraft:noise",
-    "settings": "thetruth:certus",
+    "type": "thetruth:certus",
     "biome_source": {
       "type": "minecraft:fixed",
       "biome": "thetruth:certus_debris"
