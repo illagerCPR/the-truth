@@ -18,5 +18,8 @@ out/
 run/
 runs/
 
+# Local dev-run helper mods (e.g. RDPMouse), never committed or packaged
+devmods/
+
 # OS
 .DS_Store

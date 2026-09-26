@@ -54,6 +54,11 @@ dependencies {
     implementation "org.appliedenergistics:appliedenergistics2:${project.ae2_version}"
     // Optional: compile against the public API surface only.
     compileOnly "org.appliedenergistics:appliedenergistics2:${project.ae2_version}:api"
+    // Dev-run helper (NOT compiled against, NOT packaged): RDPMouse fixes the
+    // camera-spinning-under-WSLg/RDP issue; toggle with F8 in game. Its mixins are
+    // declared client-side only and its common entry touches no client classes, so
+    // the dedicated gameTestServer load is a no-op. JAR lives in devmods/ (ignored).
+    runtimeOnly files("devmods/rdpmouse-neoforge-1.21.1-1.0.0.jar")
 }
 
 tasks.processResources {

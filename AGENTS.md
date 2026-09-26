@@ -16,6 +16,8 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 - **WSL2 MTU 黑洞（2026-09-26 实锤，首个大坑）**：镜像网络模式下 eth 网卡 MTU 1500 时，超过 ~1400 字节的包被静默丢弃且 ICMP 分片通知时通时断——表现为**大文件下载随机永久卡死**（小文件正常、连接堆积 CLOSE-WAIT、进度零推进、NRT 挂死）。诊断：`ping -4 -M do -s 1472 <host>` 全丢即实锤。**已持久化修复**：`/usr/local/sbin/wsl-fix-mtu.sh`（遍历所有 `eth*` 设 MTU 1400，幂等）经 `/etc/wsl.conf` `[boot] command` 随 WSL 启动自动执行，WSL 重启后依然生效，无需手动重跑；手动补设：`sudo /usr/local/sbin/wsl-fix-mtu.sh`。
 - **反代与 maven 下载无关**：`S302_rules.ini` 只含 `github=1` 等域，**不含任何 maven 域名**。所以 Gradle 拉依赖卡住时先查 MTU（上条），不是反代。反代的真实危害是 MITM github 域名用自签证书——Java 报 `PKIX path building failed` 才轮到它：需要访问 github 的构建步骤前提醒用户**关闭**反代，完成后提醒重新开启（保证 gh/git 稳定）。
+- **WSLg 鼠标捕获（2026-09-26）**：`runClient` 在 WSLg（本质 RDP 通道）下视角恒速疯转——MC 用 raw relative mouse input + `XWarpPointer` 每帧回中累计增量，WSLg 两者都不支持（microsoft/wslg#1242 / #1361；Mojang MC-126875 无官方修复）。**已落地解法**：`devmods/rdpmouse-neoforge-1.21.1-1.0.0.jar`（Modrinth RDPMouse 1.0.0，SHA1 `860a7403f28c01a5`）经 build.gradle 的 `runtimeOnly files(...)` 接入 dev 运行——不参与编译、不进发布产物、目录已 gitignore。游戏内 **F8** 切换 RDP 模式，光标触边按住 **Alt** 回中，方向键可转视角，需调高游戏内鼠标灵敏度。安全性已核对：其 mixin 仅在 config 的 `client` 数组、common 入口 `init()` 为空实现，gameTestServer 加载无害（22 项测试全绿实证）。
+- **git 提交邮箱**（2026-09-26 起）：全局与仓库 `user.email` 已改为 `63698328+illagerCPR@users.noreply.github.com`（GitHub noreply，防 commit `.patch` 视图泄露私人邮箱）；此前 M0–M4 的 10 个本地提交仍带旧邮箱（用户已知悉，暂不重写历史）。SSH 签名 key 与 email 无关，签名链路不受影响。
 - 系统无 `java` 命令；JDK 21 在 `~/.gradle/jdks/jdk-21.0.12.1+1`（构建命令须 `export JAVA_HOME` 指向它）。Gradle 8.8 wrapper 发行版已缓存。
 - **GameTest 结构模板必须二进制 `.nbt`**：数据包路线只读 `data/<ns>/structure/*.nbt`（gzip NBT），`.snbt` 仅在 IDE 的 `gameteststructures/` 平铺目录生效且命名空间被丢弃；`tryLoad` 静默吞异常，解析失败与缺失都报 "Missing test structure"。空模板用 `python3 tools/make_empty_structure.py` 生成。
 
