@@ -85,6 +85,15 @@ public final class CertaintyCoverage {
     }
 
     /**
+     * Single-anchor reach check. GameTests use this to assert one anchor's
+     * radius boundary without the global registry, whose entries span all
+     * GameTest plots (cross-plot pollution, see AGENTS.md M3 isolation trap).
+     */
+    public static boolean isPosCoveredByAnchor(final CertusAnchorBlockEntity anchor, final BlockPos pos) {
+        return anchor.isFieldActive() && distanceSq(anchor.getBlockPos(), pos) <= rangeSq(anchor);
+    }
+
+    /**
      * Nearest active wireless access point covering {@code pos}, or empty.
      * Scans already-loaded chunks only ({@code requireChunk = false}).
      */

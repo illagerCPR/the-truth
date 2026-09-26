@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "FAF",
+    "AEA",
+    "FAF"
+  ],
+  "key": {
+    "F": { "item": "thetruth:certus_frame" },
+    "A": { "item": "minecraft:amethyst_block" },
+    "E": { "item": "minecraft:ender_eye" }
+  },
+  "result": {
+    "count": 1,
+    "id": "thetruth:quantum_entrance"
+  }
+}

@@ -1,10 +1,12 @@
 package io.github.illagercpr.thetruth.client;
 
 import io.github.illagercpr.thetruth.TheTruth;
+import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
+import net.neoforged.neoforge.client.event.RegisterDimensionTransitionScreenEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 
 /**
@@ -24,5 +26,11 @@ public final class TheTruthClient {
 
     public static void onRegisterGuiLayers(final RegisterGuiLayersEvent event) {
         event.registerAboveAll(CertusUncertaintyOverlay.layerId(), new CertusUncertaintyOverlay());
+    }
+
+    /** M4: the "stored and transmitted" cross-dimension transition screen. */
+    public static void onRegisterDimensionTransitionScreens(final RegisterDimensionTransitionScreenEvent event) {
+        event.registerIncomingEffect(TheTruthDimensions.CERTUS, StoredTransportScreen::incoming);
+        event.registerOutgoingEffect(TheTruthDimensions.CERTUS, StoredTransportScreen::outgoing);
     }
 }

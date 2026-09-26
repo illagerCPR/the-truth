@@ -16,6 +16,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
+import net.neoforged.neoforge.client.event.RegisterDimensionTransitionScreenEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import org.slf4j.Logger;
 
@@ -54,6 +55,9 @@ public final class TheTruth {
             modEventBus.addListener(
                 RegisterGuiLayersEvent.class,
                 TheTruthClient::onRegisterGuiLayers);
+            modEventBus.addListener(
+                RegisterDimensionTransitionScreenEvent.class,
+                TheTruthClient::onRegisterDimensionTransitionScreens);
         }
     }
 
@@ -61,6 +65,11 @@ public final class TheTruth {
         event.registerBlockEntity(
             appeng.api.AECapabilities.IN_WORLD_GRID_NODE_HOST,
             TheTruthBlockEntities.CERTUS_ANCHOR.get(),
+            (blockEntity, side) -> blockEntity);
+        // M4: the quantum entrance core joins ME networks the same way.
+        event.registerBlockEntity(
+            appeng.api.AECapabilities.IN_WORLD_GRID_NODE_HOST,
+            TheTruthBlockEntities.QUANTUM_ENTRANCE.get(),
             (blockEntity, side) -> blockEntity);
     }
 }

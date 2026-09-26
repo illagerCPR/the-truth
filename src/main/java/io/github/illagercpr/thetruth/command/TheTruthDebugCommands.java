@@ -5,9 +5,12 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.illagercpr.thetruth.TheTruth;
+import io.github.illagercpr.thetruth.block.QuantumEntranceBlock;
+import io.github.illagercpr.thetruth.blockentity.QuantumEntranceBlockEntity;
 import io.github.illagercpr.thetruth.coverage.CertaintyCoverage;
 import io.github.illagercpr.thetruth.cycle.ObservationCycle;
 import io.github.illagercpr.thetruth.registry.TheTruthAttachments;
+import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
 import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
 import io.github.illagercpr.thetruth.uncertainty.UncertaintyCurve;
 import io.github.illagercpr.thetruth.uncertainty.UncertaintyData;
@@ -18,12 +21,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import io.github.illagercpr.thetruth.transport.ArrivalLocator;
+
+import appeng.api.networking.IGridNode;
 
 /**
  * Debug-only teleport commands for M1 acceptance ("enter Certus, see terrain,
@@ -51,7 +56,51 @@ public final class TheTruthDebugCommands {
                     .then(Commands.argument("value", IntegerArgumentType.integer(0,
                         UncertaintyCurve.CAP))
                         .executes(TheTruthDebugCommands::setUncertainty)))
-                .then(Commands.literal("reset").executes(TheTruthDebugCommands::resetUncertainty))));
+                .then(Commands.literal("reset").executes(TheTruthDebugCommands::resetUncertainty)))
+            .then(Commands.literal("entrance").executes(TheTruthDebugCommands::showEntranceState)));
+    }
+
+    /**
+     * Reads the quantum entrance the caller is looking at: ring completeness,
+     * grid node state, entanglement pair, remembered Certus position, and the
+     * held key's pair data. Every acceptance gate is one command away.
+     */
+    private static int showEntranceState(final CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        final ServerPlayer player = context.getSource().getPlayerOrException();
+        final HitResult hit = player.pick(8.0, 0.0F, false);
+        if (!(hit instanceof BlockHitResult blockHit)
+            || !(player.level().getBlockState(blockHit.getBlockPos()).getBlock()
+                instanceof QuantumEntranceBlock)) {
+            context.getSource().sendFailure(Component.literal("Look at a Quantum Entrance core"));
+            return 0;
+        }
+        if (!(player.level().getBlockEntity(blockHit.getBlockPos()) instanceof QuantumEntranceBlockEntity core)) {
+            context.getSource().sendFailure(Component.literal("No entrance block entity at target"));
+            return 0;
+        }
+        final String side = player.level().dimension() == Level.OVERWORLD ? "overworld" : "certus";
+        final String pair = core.getPairId() == null
+            ? "none"
+            : core.getPairId().toString().substring(0, 8);
+        final String lastPos = core.getLastCertusPos() == null
+            ? "none"
+            : core.getLastCertusPos().toShortString();
+        final var heldKey = player.getMainHandItem().get(TheTruthDataComponents.ENTANGLEMENT_PAIR.get());
+        final String keyState = heldKey == null
+            ? "unpaired"
+            : "pair=" + heldKey.pairId().toString().substring(0, 8)
+                + " home=" + heldKey.homePos().toShortString();
+        final IGridNode node = core.getActionableNode();
+        final boolean networkActive = node != null && node.isActive();
+        context.getSource().sendSuccess(() -> Component.literal(String.format(
+            "Entrance(%s) at %s: ringFormed=%s, nodeReady=%s, networkActive=%s, corePair=%s, lastCertusPos=%s, heldKey: %s",
+            side, core.getBlockPos().toShortString(),
+            core.isStructureFormed(),
+            core.getMainNode().isReady(),
+            networkActive,
+            pair, lastPos, keyState)), false);
+        return 1;
     }
 
     private static int teleportToCertus(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -62,7 +111,7 @@ public final class TheTruthDebugCommands {
         }
         // The horizontal island mask leaves many columns fully void, so never
         // assume the origin column is solid: spiral outwards until one holds.
-        final BlockPos arrival = findArrivalColumn(certus, 8, 8);
+        final BlockPos arrival = ArrivalLocator.findArrivalColumn(certus, 8, 8);
         if (arrival == null) {
             context.getSource().sendFailure(Component.literal("No solid column found within 12 chunks of origin"));
             return 0;
@@ -79,7 +128,7 @@ public final class TheTruthDebugCommands {
             return 0;
         }
         final BlockPos spawn = overworld.getSharedSpawnPos();
-        final BlockPos arrival = findArrivalColumn(overworld, spawn.getX(), spawn.getZ());
+        final BlockPos arrival = ArrivalLocator.findArrivalColumn(overworld, spawn.getX(), spawn.getZ());
         if (arrival == null) {
             context.getSource().sendFailure(Component.literal("No safe column found near world spawn"));
             return 0;
@@ -154,62 +203,5 @@ public final class TheTruthDebugCommands {
         player.teleportTo(level, x, y, z, player.getYRot(), player.getXRot());
         source.sendSuccess(() -> Component.literal(message), true);
         return 1;
-    }
-
-    /**
-     * Spirals outwards from the center column in 16-block steps and returns the
-     * first column whose surface can be stood on (as {@code BlockPos} of the
-     * standing position), or null when a 25x25-chunk area holds nothing.
-     *
-     * <p>Empty columns are cheap-skipped at {@link ChunkStatus#SURFACE} before
-     * paying for a FULL generation and block scan.
-     */
-    private static BlockPos findArrivalColumn(final ServerLevel level, final int centerX, final int centerZ) {
-        for (int radius = 0; radius <= 12; radius++) {
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) {
-                        continue;
-                    }
-                    final int x = centerX + dx * 16;
-                    final int z = centerZ + dz * 16;
-                    // Cheap pre-filter: SURFACE chunks only carry the *_WG
-                    // worldgen heightmaps (FINAL heightmaps start at CARVERS),
-                    // so query WORLD_SURFACE_WG directly on the proto chunk.
-                    final ChunkAccess proto = level.getChunk(x >> 4, z >> 4, ChunkStatus.SURFACE, true);
-                    if (proto.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x & 15, z & 15)
-                        <= level.getMinBuildHeight()) {
-                        continue;
-                    }
-                    final double y = findStandingY(level, x, z);
-                    if (y >= 0.0) {
-                        return new BlockPos(x, (int) y, z);
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Standing height at a column, or -1 when none exists. Forces the chunk to
-     * FULL status first (an un-generated chunk reports a preliminary heightmap),
-     * then scans downwards for the first solid block with two air blocks above it.
-     */
-    private static double findStandingY(final ServerLevel level, final int x, final int z) {
-        level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
-        final int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-        final int start = top > level.getMinBuildHeight()
-            ? top
-            : level.getMaxBuildHeight() - 1;
-        for (int y = start; y > level.getMinBuildHeight(); y--) {
-            final BlockPos pos = new BlockPos(x, y, z);
-            if (!level.getBlockState(pos).isAir()
-                && level.getBlockState(pos.above()).isAir()
-                && level.getBlockState(pos.above(2)).isAir()) {
-                return y + 1.0;
-            }
-        }
-        return -1.0;
     }
 }

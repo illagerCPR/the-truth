@@ -1,6 +1,11 @@
 {
   "block.thetruth.certus_stone": "Certus Stone",
   "block.thetruth.certus_anchor": "Certus Anchor",
+  "block.thetruth.certus_frame": "Certus Frame",
+  "block.thetruth.quantum_entrance": "Quantum Entrance",
+  "item.thetruth.entanglement_key": "Entanglement Singularity Key",
+  "item.thetruth.entanglement_key.tooltip.unbound": "Unpaired — right click a Quantum Entrance in the Overworld",
+  "item.thetruth.entanglement_key.tooltip.bound": "Bound to home core at %s",
   "itemGroup.thetruth.main": "The Truth",
   "thetruth.message.randomized": "Uncertainty overload: stack sizes destabilized",
   "thetruth.message.restored": "Certainty restored: stack sizes settled back",
@@ -8,5 +13,20 @@
   "thetruth.message.warning_tick": "Uncovered deletion in %s s",
   "thetruth.message.warning_cancelled": "Deletion window cancelled: left Certus",
   "thetruth.message.salvaged": "Coverage restored: your items were saved",
-  "thetruth.message.deleted": "The unobserved world deleted your items"
+  "thetruth.message.deleted": "The unobserved world deleted your items",
+  "thetruth.message.entrance.not_formed": "The quantum ring is incomplete",
+  "thetruth.message.entrance.no_network": "The core has no powered ME network",
+  "thetruth.message.entrance.no_spatial_cell": "Delivery device missing: no spatial storage cell in the network",
+  "thetruth.message.entrance.no_power": "Not enough AE in the network for the jump",
+  "thetruth.message.entrance.no_key": "An entanglement singularity key is required",
+  "thetruth.message.entrance.key_mismatch": "This key does not match the core's entanglement pair",
+  "thetruth.message.entrance.no_arrival": "No viable arrival point was found",
+  "thetruth.message.entrance.no_home_level": "The key's home dimension is unreachable",
+  "thetruth.message.entrance.bound": "Entanglement pair minted: one key stays with this core, one travels with you",
+  "thetruth.message.entrance.transporting": "Storing and transmitting...",
+  "thetruth.message.entrance.spawn_denied": "Certus refuses to record your position",
+  "thetruth.message.entrance.remnant_name": "Data Remnant",
+  "thetruth.screen.entrance.incoming": "Reconstituting matter...",
+  "thetruth.screen.entrance.outgoing": "Serializing traveler...",
+  "thetruth.screen.entrance.sub": "You are being stored and transmitted"
 }

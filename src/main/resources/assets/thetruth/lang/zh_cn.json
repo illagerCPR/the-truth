@@ -1,6 +1,11 @@
 {
   "block.thetruth.certus_stone": "确界石",
   "block.thetruth.certus_anchor": "确界锚点",
+  "block.thetruth.certus_frame": "确界框架",
+  "block.thetruth.quantum_entrance": "量子入口",
+  "item.thetruth.entanglement_key": "纠缠奇点钥匙",
+  "item.thetruth.entanglement_key.tooltip.unbound": "未配对——在主世界对量子入口右键",
+  "item.thetruth.entanglement_key.tooltip.bound": "已绑定主世界核心：%s",
   "itemGroup.thetruth.main": "The Truth",
   "thetruth.message.randomized": "不确定度超限：物品数量失稳",
   "thetruth.message.restored": "确定性恢复：物品数量已复原",
@@ -8,5 +13,20 @@
   "thetruth.message.warning_tick": "未覆盖物品将在 %s 秒后被删除",
   "thetruth.message.warning_cancelled": "删除窗口已取消：已离开确界",
   "thetruth.message.salvaged": "覆盖恢复：你的物品已被挽救",
-  "thetruth.message.deleted": "你的物品被未观测的世界删除了"
+  "thetruth.message.deleted": "你的物品被未观测的世界删除了",
+  "thetruth.message.entrance.not_formed": "量子环结构未成型",
+  "thetruth.message.entrance.no_network": "核心未接入已供能的 ME 网络",
+  "thetruth.message.entrance.no_spatial_cell": "投递装置缺失：网络中找不到空间元件（空间 IO）",
+  "thetruth.message.entrance.no_power": "网络中 AE 能量不足，无法完成传输",
+  "thetruth.message.entrance.no_key": "需要纠缠奇点钥匙",
+  "thetruth.message.entrance.key_mismatch": "这把钥匙与核心的纠缠对不匹配",
+  "thetruth.message.entrance.no_arrival": "未找到可用的落点",
+  "thetruth.message.entrance.no_home_level": "钥匙记忆的主世界维度不可达",
+  "thetruth.message.entrance.bound": "纠缠对已建立：一枚留在此核心，一枚随你被存储",
+  "thetruth.message.entrance.transporting": "正在存储并传输……",
+  "thetruth.message.entrance.spawn_denied": "确界拒绝记录你的位置",
+  "thetruth.message.entrance.remnant_name": "数据残片",
+  "thetruth.screen.entrance.incoming": "正在重构物质形态……",
+  "thetruth.screen.entrance.outgoing": "正在序列化传输体……",
+  "thetruth.screen.entrance.sub": "你正被存储并传输"
 }

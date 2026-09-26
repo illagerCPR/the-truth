@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "ISI",
+    "SAS",
+    "ISI"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "S": { "item": "minecraft:smooth_stone" },
+    "A": { "item": "minecraft:amethyst_shard" }
+  },
+  "result": {
+    "count": 4,
+    "id": "thetruth:certus_frame"
+  }
+}

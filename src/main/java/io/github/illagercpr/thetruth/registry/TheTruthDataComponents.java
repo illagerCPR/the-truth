@@ -2,6 +2,7 @@ package io.github.illagercpr.thetruth.registry;
 
 import com.mojang.serialization.Codec;
 import io.github.illagercpr.thetruth.TheTruth;
+import io.github.illagercpr.thetruth.transport.EntanglementPairData;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -28,6 +29,15 @@ public final class TheTruthDataComponents {
         DATA_COMPONENTS.registerComponentType("uncertain_count",
             builder -> builder.persistent(Codec.intRange(1, 99))
                 .networkSynchronized(ByteBufCodecs.VAR_INT));
+
+    /**
+     * M4 entanglement pair data of an Entanglement Key: pair id plus the home
+     * entrance core position. Absent on unbound (unpaired) keys.
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<EntanglementPairData>> ENTANGLEMENT_PAIR =
+        DATA_COMPONENTS.registerComponentType("entanglement_pair",
+            builder -> builder.persistent(EntanglementPairData.CODEC)
+                .networkSynchronized(EntanglementPairData.STREAM_CODEC));
 
     private TheTruthDataComponents() {
     }

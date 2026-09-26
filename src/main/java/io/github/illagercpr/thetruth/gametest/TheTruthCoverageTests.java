@@ -79,12 +79,19 @@ public final class TheTruthCoverageTests {
         helper.startSequence()
             .thenIdle(60)
             .thenExecute(() -> {
+                final var anchor = (CertusAnchorBlockEntity) helper.getBlockEntity(ANCHOR_POS);
                 // Default range is 16 blocks; x offset 16 from the anchor is
-                // inside, 17 is outside.
+                // inside, 17 is outside. The boundary is asserted against this
+                // anchor alone: the global registry spans every GameTest plot,
+                // so a neighbouring plot's powered anchor can legally cover the
+                // far probe position (M3 isolation trap, AGENTS.md).
+                check(helper, CertaintyCoverage.isPosCoveredByAnchor(anchor,
+                        helper.absolutePos(new BlockPos(17, 1, 1))), "distance 16 must be covered");
+                check(helper, !CertaintyCoverage.isPosCoveredByAnchor(anchor,
+                        helper.absolutePos(new BlockPos(18, 1, 1))), "distance 17 must not be covered");
                 check(helper, CertaintyCoverage.withinAnchorField(helper.getLevel(),
-                    helper.absolutePos(new BlockPos(17, 1, 1))), "distance 16 must be covered");
-                check(helper, !CertaintyCoverage.withinAnchorField(helper.getLevel(),
-                    helper.absolutePos(new BlockPos(18, 1, 1))), "distance 17 must not be covered");
+                        helper.absolutePos(new BlockPos(17, 1, 1))),
+                    "the registry path must still report coverage inside the field");
             })
             .thenSucceed();
     }

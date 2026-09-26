@@ -21,6 +21,9 @@ public final class TheTruthCreativeTabs {
             .displayItems((parameters, output) -> {
                 output.accept(TheTruthItems.CERTUS_STONE.get());
                 output.accept(TheTruthItems.CERTUS_ANCHOR.get());
+                output.accept(TheTruthItems.CERTUS_FRAME.get());
+                output.accept(TheTruthItems.QUANTUM_ENTRANCE.get());
+                output.accept(TheTruthItems.ENTANGLEMENT_KEY.get());
             })
             .build());
 
