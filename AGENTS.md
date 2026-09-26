@@ -4,7 +4,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 当前状态（2026-09-26）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）已完成**：M3 交付覆盖判定服务（确界锚点确定性场 + AE2 无线接入点 chunk 扫描）+ 玩家不确定度（Data Attachment 自动同步）+ 三级曲线（表层教学 / 中层随机化可恢复 / 深层 4 s 预警窗口可挽救）+ 客户端噪点闪烁 overlay + `CertusAnchorBlockEntity`（AE2 网络节点，idle 16 AE/t，半径 16 格确定性场），GameTest 17 项全绿。下一批次 **M4（入口与回程）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）、M4（入口与回程）已完成**：M4 交付量子环多方块（3×3 竖直环：7 确界框架 + 量子入口核心，两侧同构）+ 纠缠奇点钥匙（`entanglement_pair` 数据组件，主世界核心绑定仪式扣 10,000 AE 且网络须含空间元件，重新绑定即丢钥恢复路径）+ 双向传送（去程 5,000 AE 需匹配 pair + 空间元件在网校验，回程免费只需成型环 + 配对钥匙——回家永远可行；落点记忆 `lastCertusPos` 双向回写「最后确界落点」+ 首次螺旋搜索 `ArrivalLocator`）+ 卡死保险（确界死亡掉落 = 命名发光数据残片永不消失；确界内设重生点被取消）+ 「被存储」过场界面（`RegisterDimensionTransitionScreenEvent` incoming/outgoing）+ `/thetruthdebug entrance` 验收读数。GameTest 22 项全绿。下一批次 **M5（确界存储层）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -71,6 +71,19 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 - 音效常量：`SoundEvents.AMETHYST_BLOCK_CHIME`（不存在 `AMETHYST_CLUSTER_CHIME`；`AMETHYST_CLUSTER_BREAK`、`WARDEN_HEARTBEAT`、`WARDEN_SONIC_BOOM` 存在）。mappings：`Util` 在 `net.minecraft` 顶层；`RandomSource` 在 `net.minecraft.util`。
 - **GameTest 隔离陷阱**：per-level 静态注册表跨测试 plot 共享（GameTest 世界各 plot 相距不远），世界级"负向"断言（如"此处不得被覆盖"）会被相邻 plot 的场污染——负向验证改为对被测 BE 自身断言；正向断言不受影响。
 - AE2 19.2.17 的 `IWirelessAccessPoint` 判定复用：接入点 BE 无法从 API 侧枚举，扫玩家周边 chunk 的 `LevelChunk#getBlockEntities()` 过滤接口即可（`DimensionalBlockPos.isInWorld` 判维度）。
+
+## M4 核对的硬事实（2026-09-26）
+
+- **NeoForge `ItemEntity.setUnlimitedLifetime()` 重置的是 `age = -32768`**（约 32 分钟延寿），**不是** despawn 阈值——"永不消失"必须另设 public 字段 `lifespan = Integer.MAX_VALUE`（`age` 是 private 无 getter）。两者叠加才是真正的永不 despawn。
+- **AE2 创造 ME 存储元件是物品**（`ae2:creative_storage_cell`，`CreativeCellItem`，装进 ME 驱动器用），**没有对应方块**——GameTest 里给网络注入存储用纯 API 替身：自实现 `IStorageProvider`（`mountInventories(mounts)` → `mounts.mount(MEStorage, IStorageMounts.DEFAULT_PRIORITY)`）+ `IStorageService.addGlobalStorageProvider(...)`，**同步挂载**（ProviderState.mount() 立即调 mountInventories），add 后同 tick 即可 insert/getAvailableStacks。
+- AE2 网络 API 三件套（19.2.17 公开 API 实测）：`IStorageService.getInventory()` → `MEStorage`（`insert/extract(AEKey, long, Actionable, IActionSource)`、`getAvailableStacks()` → `KeyCounter`，`Iterable<Object2LongMap.Entry<AEKey>>`）；能量 `IGrid.getEnergyService().extractAEPower(cost, Actionable, PowerMultiplier.ONE)`——先 `SIMULATE` 校验再 `MODULATE` 扣除。
+- 空间元件物品 id 是 `ae2:spatial_storage_cell_{2,16,128}`（**不是** `spatial_cell2`；lang 键 `item.ae2.spatial_storage_cell_2` 可证）。
+- 1.21.1 配方 JSON 的 ingredient 仍是**对象格式** `{"item": ...}` / `{"tag": ...}`（字符串形式是 1.21.2+）；目录名 `recipe/`（单数）。原版样例可从 merged jar 的 `data/minecraft/recipe/*.json` 直接核对。
+- 过场界面：`RegisterDimensionTransitionScreenEvent`（client mod bus）提供 `registerIncomingEffect/registerOutgoingEffect/registerConditionalEffect(ResourceKey<Level>, ReceivingLevelScreenFactory)`；工厂签名 `(BooleanSupplier, ReceivingLevelScreen$Reason) → ReceivingLevelScreen`，`Reason` 枚举只有 `NETHER_PORTAL / END_PORTAL / OTHER`；`ReceivingLevelScreen(BooleanSupplier, Reason)` 可继承并整屏重绘（`shouldCloseOnEsc` 可关）。
+- mappings：发光是 `Entity.setGlowingTag(boolean)`（无 `setGlowing`）；`Player.pick(...)` 返回 `HitResult`，须 `instanceof BlockHitResult` 收窄；`GameTestHelper.makeMockServerPlayerInLevel()` 已标记过时（仍可用，无替代）。
+- **GameTest plot 布局会随测试数量变化整体重排**：M4 新增 5 个 plot 后 M3 的 radius 测试（全局负向断言 dist 17 不覆盖）被相邻带电锚点 plot 污染翻车——M3 隔离坑的强化实例。解法：`CertaintyCoverage.isPosCoveredByAnchor(anchor, pos)` 单锚点判定，负向断言锚定被测锚点自身；正向断言不受影响。
+- 传送落点安全：复用 M1 debug 命令的螺旋搜索算法（抽为 `transport/ArrivalLocator`，`ChunkStatus.SURFACE` 预筛 + `WORLD_SURFACE_WG` heightmap + FULL 态逐列扫描），debug 命令与游戏入口共用单一来源。
+
 
 ## 设计红线（违反即打回）
 
