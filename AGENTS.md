@@ -4,7 +4,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 当前状态（2026-09-26）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）、M4（入口与回程）已完成**：M4 交付量子环多方块（3×3 竖直环：7 确界框架 + 量子入口核心，两侧同构）+ 纠缠奇点钥匙（`entanglement_pair` 数据组件，主世界核心绑定仪式扣 10,000 AE 且网络须含空间元件，重新绑定即丢钥恢复路径）+ 双向传送（去程 5,000 AE 需匹配 pair + 空间元件在网校验，回程免费只需成型环 + 配对钥匙——回家永远可行；落点记忆 `lastCertusPos` 双向回写「最后确界落点」+ 首次螺旋搜索 `ArrivalLocator`）+ 卡死保险（确界死亡掉落 = 命名发光数据残片永不消失；确界内设重生点被取消）+ 「被存储」过场界面（`RegisterDimensionTransitionScreenEvent` incoming/outgoing）+ `/thetruthdebug entrance` 验收读数。GameTest 22 项全绿。下一批次 **M5（确界存储层）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）、M4（入口与回程）已完成**：M4 交付量子环多方块（3×3 竖直环：7 确界框架 + 量子入口核心，两侧同构）+ 纠缠奇点钥匙（`entanglement_pair` 数据组件，主世界核心绑定仪式扣 10,000 AE 且网络须具备空间 IO 基建（空间 IO 端口在网 + 空间塔阵列合法），重新绑定即丢钥恢复路径）+ 双向传送（去程 5,000 AE 需匹配 pair + 空间 IO 基建校验，回程免费只需成型环 + 配对钥匙——回家永远可行；落点记忆 `lastCertusPos` 双向回写「最后确界落点」+ 首次螺旋搜索 `ArrivalLocator`）+ 卡死保险（确界死亡掉落 = 命名发光数据残片永不消失；确界内设重生点被取消）+ 「被存储」过场界面（`RegisterDimensionTransitionScreenEvent` incoming/outgoing）+ `/thetruthdebug entrance` 验收读数。GameTest 22 项全绿。下一批次 **M5（确界存储层）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -85,6 +85,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 - mappings：发光是 `Entity.setGlowingTag(boolean)`（无 `setGlowing`）；`Player.pick(...)` 返回 `HitResult`，须 `instanceof BlockHitResult` 收窄；`GameTestHelper.makeMockServerPlayerInLevel()` 已标记过时（仍可用，无替代）。
 - **GameTest plot 布局会随测试数量变化整体重排**：M4 新增 5 个 plot 后 M3 的 radius 测试（全局负向断言 dist 17 不覆盖）被相邻带电锚点 plot 污染翻车——M3 隔离坑的强化实例。解法：`CertaintyCoverage.isPosCoveredByAnchor(anchor, pos)` 单锚点判定，负向断言锚定被测锚点自身；正向断言不受影响。
 - 传送落点安全：复用 M1 debug 命令的螺旋搜索算法（抽为 `transport/ArrivalLocator`，`ChunkStatus.SURFACE` 预筛 + `WORLD_SURFACE_WG` heightmap + FULL 态逐列扫描），debug 命令与游戏入口共用单一来源。
+- **空间门槛修订（2026-09-26，runClient 人工验收发现）**：AE2 空间元件（`SpatialStorageCellItem implements ISpatialStorageCell`）**不是 ME 存储元件**——ME 驱动器拒收（只认 `IMEStorageCell`），只能放进空间 IO 端口，永不入 `getAvailableStacks()`；「扫网络存储找空间元件」判定真实世界不可达，GameTest 曾用替身注入验证了一个不可达状态。正确姿势：门槛判定用 `IGrid.getNodes()` 扫 BE 方块 registry id（`ae2:spatial_io_port`，不 import 内部类）+ `grid.getSpatialService().isValidRegion()`（塔阵列合法，公开 API：`hasRegion/isValidRegion/getMin/getMax/requiredPower/currentEfficiency`）。空间 IO 端口 BE **无任何 capability**（`InitCapabilityProviders` 不注册它）→ API 侧读不到端口槽位。AE2 官方最小空间基建（jar 内 guide 示例 `spatial_storage_1x1x1.snbt`）：3 根 2 格直线塔 + cable + 端口 + 供能；pylon cluster 必须直线（L 形非法），region 只由塔撑出的外接盒**收缩 1 格**定义（收缩后每维 ≥1 即合法）。**GameTest 实测新坑：`helper.setBlock` 用 defaultBlockState 放 `ae2:cable_bus` 会跳过连接计算——各方向 connections=false，cable 不暴露任何方向的节点，靠它桥接的塔全部不联网**（塔-塔、塔-核心直接相邻不受影响）。最终测试布局无 cable：3 根直线塔（Z 3 格贴核心 / Y 2 格 / X 2 格）经 `spatial_io_port` 与核心全部直接相邻，撑出 3×3×4 外接盒（收缩后 1×1×2 合法）。`SpatialPylonService.isValidRegion()` 只在网络 boot 状态翻转（`GridBootingStatusChange`）时重算——塔入网引发 reboot 后 idle 40 tick 实证足够。**GameTest 纪律：替身只许模拟真实世界可达的状态——判定逻辑的测试必须用真实方块搭建**。
 
 
 ## 设计红线（违反即打回）

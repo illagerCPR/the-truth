@@ -16,7 +16,7 @@
   "thetruth.message.deleted": "The unobserved world deleted your items",
   "thetruth.message.entrance.not_formed": "The quantum ring is incomplete",
   "thetruth.message.entrance.no_network": "The core has no powered ME network",
-  "thetruth.message.entrance.no_spatial_cell": "Delivery device missing: no spatial storage cell in the network",
+  "thetruth.message.entrance.no_spatial_io": "Spatial IO missing: the network needs a spatial IO port and a valid pylon array",
   "thetruth.message.entrance.no_power": "Not enough AE in the network for the jump",
   "thetruth.message.entrance.no_key": "An entanglement singularity key is required",
   "thetruth.message.entrance.key_mismatch": "This key does not match the core's entanglement pair",

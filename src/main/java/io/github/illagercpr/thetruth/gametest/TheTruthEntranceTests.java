@@ -2,15 +2,8 @@ package io.github.illagercpr.thetruth.gametest;
 
 import java.util.List;
 
-import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
-import appeng.api.networking.security.IActionSource;
-import appeng.api.stacks.AEItemKey;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.KeyCounter;
-import appeng.api.storage.IStorageMounts;
-import appeng.api.storage.IStorageProvider;
-import appeng.api.storage.MEStorage;
+import appeng.api.networking.IGridNode;
 import io.github.illagercpr.thetruth.TheTruth;
 import io.github.illagercpr.thetruth.blockentity.QuantumEntranceBlockEntity;
 import io.github.illagercpr.thetruth.event.TheTruthRemnantHandlers;
@@ -26,20 +19,26 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
- * M4 entrance tests: ring geometry, the binding ritual and its spatial-cell
- * gate, key pair validation for the outbound jump, and the data-remnant
- * lifetime guarantee. The actual cross-dimension jump is verified manually
- * (mock players do not survive a real changeDimension); the jump itself only
- * composes DimensionTransition, whose signature was javap-verified (docs/01).
+ * M4 entrance tests: ring geometry, the binding ritual and its spatial-IO
+ * infrastructure gate, key pair validation for the outbound jump, and the
+ * data-remnant lifetime guarantee. The actual cross-dimension jump is verified
+ * manually (mock players do not survive a real changeDimension); the jump
+ * itself only composes DimensionTransition, whose signature was javap-verified
+ * (docs/01).
+ *
+ * <p>The spatial gate is exercised with real AE2 blocks (pylons, cable, port,
+ * power), never with storage doubles: a spatial storage cell can never appear
+ * in network storage in a real world, so injecting one through a test double
+ * used to verify an unreachable state (AGENTS.md, M4 fix).
  */
 @GameTestHolder(TheTruth.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -77,39 +76,27 @@ public final class TheTruthEntranceTests {
     }
 
     @GameTest(template = "quantum_ring")
-    public static void bindingRequiresSpatialCellInNetwork(final GameTestHelper helper) {
+    public static void bindingRequiresSpatialIoInfrastructure(final GameTestHelper helper) {
         final ItemStack key = preparePoweredRing(helper);
         helper.startSequence()
             .thenIdle(40)
             .thenExecute(() -> {
                 final QuantumEntranceBlockEntity core = coreOf(helper);
                 final var failure = QuantumTransport.validateBinding(core, key, helper.getLevel());
-                check(helper, failure == QuantumTransport.Failure.NO_SPATIAL_CELL,
-                    "binding without a spatial cell must be refused, got " + failure);
+                check(helper, failure == QuantumTransport.Failure.NO_SPATIAL_IO,
+                    "binding without spatial IO infrastructure must be refused, got " + failure);
             })
-            // Deliver the spatial cell into the network via a test-owned storage
-            // provider (pure API; mounts synchronously), then the gate opens.
+            // Real blocks only: AE2's own minimal 1x1x1 pylon assembly plus a
+            // spatial IO port, bridged into the core's grid. The pylons need a
+            // few ticks to form their clusters and report a valid region.
+            .thenExecute(() -> placeSpatialInfrastructure(helper))
+            .thenIdle(40)
             .thenExecute(() -> {
                 final QuantumEntranceBlockEntity core = coreOf(helper);
-                final IGrid grid = core.getMainNode().getNode().getGrid();
-                check(helper, grid != null, "grid must exist with a powered cell");
-                final TestStorageProvider provider = new TestStorageProvider();
-                grid.getStorageService().addGlobalStorageProvider(provider);
-                final long inserted = grid.getStorageService().getInventory()
-                    .insert(AEItemKey.of(spatialCellItem(helper)), 1, Actionable.MODULATE,
-                        IActionSource.empty());
-                final var available = new StringBuilder();
-                for (final var entry : grid.getStorageService().getInventory().getAvailableStacks()) {
-                    available.append(entry.getKey()).append(" x").append(entry.getLongValue()).append("; ");
-                }
-                check(helper, inserted == 1,
-                    "spatial cell insert returned " + inserted + "; available: " + available);
-            })
-            .thenExecute(() -> {
-                final QuantumEntranceBlockEntity core = coreOf(helper);
+                assertSpatialInfrastructureOnline(helper, core);
                 final var failure = QuantumTransport.validateBinding(core, key, helper.getLevel());
                 check(helper, failure == null,
-                    "binding with a spatial cell must pass, got " + failure);
+                    "binding with a port and a valid pylon array must pass, got " + failure);
             })
             .thenSucceed();
     }
@@ -117,16 +104,13 @@ public final class TheTruthEntranceTests {
     @GameTest(template = "quantum_ring")
     public static void performBindingWritesPairData(final GameTestHelper helper) {
         final ItemStack key = preparePoweredRing(helper);
+        placeSpatialInfrastructure(helper);
         final ServerPlayer mock = helper.makeMockServerPlayerInLevel();
         helper.startSequence()
             .thenIdle(40)
             .thenExecute(() -> {
                 final QuantumEntranceBlockEntity core = coreOf(helper);
-                final IGrid grid = core.getMainNode().getNode().getGrid();
-                grid.getStorageService().addGlobalStorageProvider(new TestStorageProvider());
-                grid.getStorageService().getInventory()
-                    .insert(AEItemKey.of(spatialCellItem(helper)), 1, Actionable.MODULATE,
-                        IActionSource.empty());
+                assertSpatialInfrastructureOnline(helper, core);
                 final var failure = QuantumTransport.performBinding(mock, core, key);
                 check(helper, failure == null, "binding must succeed, got " + failure);
             })
@@ -156,15 +140,12 @@ public final class TheTruthEntranceTests {
     @GameTest(template = "quantum_ring")
     public static void outboundRequiresMatchingPair(final GameTestHelper helper) {
         final ItemStack key = preparePoweredRing(helper);
+        placeSpatialInfrastructure(helper);
         helper.startSequence()
             .thenIdle(40)
             .thenExecute(() -> {
                 final QuantumEntranceBlockEntity core = coreOf(helper);
-                final IGrid grid = core.getMainNode().getNode().getGrid();
-                grid.getStorageService().addGlobalStorageProvider(new TestStorageProvider());
-                grid.getStorageService().getInventory()
-                    .insert(AEItemKey.of(spatialCellItem(helper)), 1, Actionable.MODULATE,
-                        IActionSource.empty());
+                assertSpatialInfrastructureOnline(helper, core);
                 final ServerPlayer mock = helper.makeMockServerPlayerInLevel();
                 check(helper, QuantumTransport.performBinding(mock, core, key) == null,
                     "binding must succeed before the outbound check");
@@ -224,6 +205,75 @@ public final class TheTruthEntranceTests {
         return new ItemStack(TheTruthItems.ENTANGLEMENT_KEY.get());
     }
 
+    /**
+     * AE2 spatial IO infrastructure built from real blocks, cable-free: every
+     * device joins the core's grid by direct adjacency. (Cables are avoided
+     * because helper.setBlock applies the default blockstate and skips the
+     * connection calculation, leaving ae2:cable_bus connected to nothing.)
+     *
+     * <p>Layout inside the 7x4x7 template (ring at x1..3/y1..3/z2, core at
+     * 2,1,2, cell at 2,2,2):
+     * <ul>
+     *   <li>Pylon A (z-run, 3 blocks): (2,0,0) (2,0,1) (2,0,2) — tail touches
+     *       the core at (2,1,2).</li>
+     *   <li>Spatial IO port: (2,0,3) — touches pylon A's tail.</li>
+     *   <li>Pylon B (y-run, 2 blocks): (2,1,3) (2,2,3) — head touches the port
+     *       and the core; tail touches the energy cell.</li>
+     *   <li>Pylon C (x-run, 2 blocks): (3,0,3) (4,0,3) — head touches the
+     *       port.</li>
+     * </ul>
+     * Three independent straight pylon clusters bound a 3x3x4 shell
+     * (x2..4, y0..2, z0..3), which contracts to a valid 1x1x2 region.
+     */
+    private static void placeSpatialInfrastructure(final GameTestHelper helper) {
+        final Block pylon = ae2Block(helper, "ae2:spatial_pylon");
+        final Block port = ae2Block(helper, "ae2:spatial_io_port");
+        // Pylon A (z-run): the tail sits directly under the core.
+        helper.setBlock(new BlockPos(2, 0, 0), pylon);
+        helper.setBlock(new BlockPos(2, 0, 1), pylon);
+        helper.setBlock(new BlockPos(2, 0, 2), pylon);
+        // Port bridges from pylon A's tail to pylons B and C.
+        helper.setBlock(new BlockPos(2, 0, 3), port);
+        // Pylon B (y-run).
+        helper.setBlock(new BlockPos(2, 1, 3), pylon);
+        helper.setBlock(new BlockPos(2, 2, 3), pylon);
+        // Pylon C (x-run).
+        helper.setBlock(new BlockPos(3, 0, 3), pylon);
+        helper.setBlock(new BlockPos(4, 0, 3), pylon);
+    }
+
+    /** Fails the test unless the port is on the grid and the region is valid. */
+    private static void assertSpatialInfrastructureOnline(final GameTestHelper helper,
+                                                          final QuantumEntranceBlockEntity core) {
+        final var node = core.getMainNode().getNode();
+        check(helper, node != null, "the core must have a grid node");
+        final IGrid grid = node.getGrid();
+        check(helper, grid != null, "the core must be on a grid");
+        boolean portInGrid = false;
+        int pylonCount = 0;
+        for (final IGridNode gridNode : grid.getNodes()) {
+            if (gridNode.getOwner() instanceof BlockEntity be) {
+                final var blockId = BuiltInRegistries.BLOCK.getKey(be.getBlockState().getBlock());
+                if (blockId.equals(ResourceLocation.parse("ae2:spatial_io_port"))) {
+                    portInGrid = true;
+                } else if (blockId.equals(ResourceLocation.parse("ae2:spatial_pylon"))) {
+                    pylonCount++;
+                }
+            }
+        }
+        final var spatial = grid.getSpatialService();
+        final String diagnostics = "nodes=" + grid.size()
+            + " pylonsInGrid=" + pylonCount
+            + " portInNet=" + portInGrid
+            + " hasRegion=" + spatial.hasRegion()
+            + " regionValid=" + spatial.isValidRegion()
+            + " min=" + spatial.getMin() + " max=" + spatial.getMax();
+        check(helper, pylonCount == 7, "all 7 pylon blocks must join the grid: " + diagnostics);
+        check(helper, portInGrid, "the spatial IO port must join the core's grid: " + diagnostics);
+        check(helper, spatial.isValidRegion(),
+            "the pylon array must bound a valid region: " + diagnostics);
+    }
+
     private static QuantumEntranceBlockEntity coreOf(final GameTestHelper helper) {
         final var be = helper.getBlockEntity(CORE_POS);
         check(helper, be instanceof QuantumEntranceBlockEntity,
@@ -233,68 +283,14 @@ public final class TheTruthEntranceTests {
 
     /** The AE2 creative cell, resolved through the block registry like M3. */
     private static Block creativeCell(final GameTestHelper helper) {
-        final Block cell = BuiltInRegistries.BLOCK.get(
-            ResourceLocation.parse("ae2:creative_energy_cell"));
-        check(helper, !cell.defaultBlockState().isAir(), "ae2:creative_energy_cell must exist");
-        return cell;
+        return ae2Block(helper, "ae2:creative_energy_cell");
     }
 
-    /** The AE2 spatial storage cell (2^3), resolved by id. */
-    private static Item spatialCellItem(final GameTestHelper helper) {
-        final Item cell = BuiltInRegistries.ITEM.get(
-            ResourceLocation.parse("ae2:spatial_storage_cell_2"));
-        check(helper, cell != Items.AIR, "ae2:spatial_storage_cell_2 must exist");
-        return cell;
-    }
-
-    /**
-     * Test-owned network storage (pure appeng.api): accepts everything and
-     * reports it back, playing the role of a filled ME drive without touching
-     * AE2 internals. addGlobalStorageProvider mounts synchronously.
-     */
-    private static final class TestStorageProvider implements IStorageProvider {
-
-        private final TestStorage storage = new TestStorage();
-
-        @Override
-        public void mountInventories(final IStorageMounts mounts) {
-            mounts.mount(storage, IStorageMounts.DEFAULT_PRIORITY);
-        }
-    }
-
-    private static final class TestStorage implements MEStorage {
-
-        private final KeyCounter stored = new KeyCounter();
-
-        @Override
-        public long insert(final AEKey what, final long amount, final Actionable mode,
-                           final IActionSource source) {
-            if (mode == Actionable.SIMULATE) {
-                return amount;
-            }
-            stored.add(what, amount);
-            return amount;
-        }
-
-        @Override
-        public long extract(final AEKey what, final long amount, final Actionable mode,
-                            final IActionSource source) {
-            final long taken = Math.min(stored.get(what), amount);
-            if (mode == Actionable.MODULATE && taken > 0) {
-                stored.remove(what, taken);
-            }
-            return taken;
-        }
-
-        @Override
-        public void getAvailableStacks(final KeyCounter out) {
-            out.addAll(stored);
-        }
-
-        @Override
-        public net.minecraft.network.chat.Component getDescription() {
-            return net.minecraft.network.chat.Component.literal("truth-test-storage");
-        }
+    /** An AE2 block resolved by registry id (no AE2 internals imported). */
+    private static Block ae2Block(final GameTestHelper helper, final String id) {
+        final Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id));
+        check(helper, !block.defaultBlockState().isAir(), id + " must exist");
+        return block;
     }
 
     private static void check(final GameTestHelper helper, final boolean condition, final String message) {

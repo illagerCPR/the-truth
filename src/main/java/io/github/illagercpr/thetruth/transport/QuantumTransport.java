@@ -1,14 +1,11 @@
 package io.github.illagercpr.thetruth.transport;
 
-import java.util.Set;
-
 import org.jetbrains.annotations.Nullable;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.networking.IGrid;
-import appeng.api.stacks.AEItemKey;
-import appeng.api.stacks.AEKey;
+import appeng.api.networking.IGridNode;
 import io.github.illagercpr.thetruth.blockentity.QuantumEntranceBlockEntity;
 import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
 import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
@@ -22,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.Vec3;
 
@@ -30,9 +28,10 @@ import net.minecraft.world.phys.Vec3;
  * Overworld and Certus ("stored and transmitted", not walking through a door).
  *
  * <p>Gate design (red line 1): the Overworld core requires a formed ring, a
- * powered ME network holding a spatial storage cell, and energy for the jump.
- * The Certus tether only requires the formed ring and a bound key — going home
- * must always work (kill-switch insurance, docs/02 M4 decision 4).
+ * powered ME network with spatial IO infrastructure (a spatial IO port plus a
+ * valid pylon array), and energy for the jump. The Certus tether only requires
+ * the formed ring and a bound key — going home must always work (kill-switch
+ * insurance, docs/02 M4 decision 4).
  */
 public final class QuantumTransport {
 
@@ -42,19 +41,18 @@ public final class QuantumTransport {
     public static final int OUTBOUND_COST_AE = 5_000;
 
     /**
-     * AE2 spatial storage cells accepted as the delivery device. Resolved by
-     * registry id because the item classes are AE2 internals (appeng.api only).
+     * Registry id of AE2's spatial IO port, the anchor device of the spatial
+     * IO gate. Resolved by registry id because the block entity class is an
+     * AE2 internal (only appeng.api may be imported).
      */
-    private static final Set<ResourceLocation> SPATIAL_CELL_IDS = Set.of(
-        ResourceLocation.fromNamespaceAndPath("ae2", "spatial_storage_cell_2"),
-        ResourceLocation.fromNamespaceAndPath("ae2", "spatial_storage_cell_16"),
-        ResourceLocation.fromNamespaceAndPath("ae2", "spatial_storage_cell_128"));
+    private static final ResourceLocation SPATIAL_IO_PORT_ID =
+        ResourceLocation.fromNamespaceAndPath("ae2", "spatial_io_port");
 
     /** Why a transport request was refused; {@code null} paths mean success. */
     public enum Failure {
         NOT_FORMED("thetruth.message.entrance.not_formed"),
         NO_NETWORK("thetruth.message.entrance.no_network"),
-        NO_SPATIAL_CELL("thetruth.message.entrance.no_spatial_cell"),
+        NO_SPATIAL_IO("thetruth.message.entrance.no_spatial_io"),
         NO_POWER("thetruth.message.entrance.no_power"),
         NO_KEY("thetruth.message.entrance.no_key"),
         KEY_MISMATCH("thetruth.message.entrance.key_mismatch"),
@@ -254,8 +252,8 @@ public final class QuantumTransport {
     }
 
     /**
-     * The common Overworld-side gates: formed ring, powered network holding a
-     * spatial storage cell, and enough stored energy for {@code cost}.
+     * The common Overworld-side gates: formed ring, powered network with
+     * spatial IO infrastructure, and enough stored energy for {@code cost}.
      */
     @Nullable
     private static Failure checkNetworkGate(final QuantumEntranceBlockEntity core, final double cost) {
@@ -263,8 +261,8 @@ public final class QuantumTransport {
         if (grid == null || !core.getMainNode().isActive()) {
             return Failure.NO_NETWORK;
         }
-        if (!networkHasSpatialCell(grid)) {
-            return Failure.NO_SPATIAL_CELL;
+        if (!networkHasSpatialIoInfrastructure(grid)) {
+            return Failure.NO_SPATIAL_IO;
         }
         final double available = grid.getEnergyService()
             .extractAEPower(cost, Actionable.SIMULATE, PowerMultiplier.ONE);
@@ -274,11 +272,21 @@ public final class QuantumTransport {
         return null;
     }
 
-    private static boolean networkHasSpatialCell(final IGrid grid) {
-        for (final var entry : grid.getStorageService().getInventory().getAvailableStacks()) {
-            final AEKey key = entry.getKey();
-            if (key instanceof AEItemKey itemKey
-                && SPATIAL_CELL_IDS.contains(BuiltInRegistries.ITEM.getKey(itemKey.getItem()))) {
+    /**
+     * The spatial IO gate (docs/02 M4 decision 3): the network must hold a
+     * spatial IO port <em>and</em> a valid pylon array. Spatial storage cells
+     * can never appear in network storage (AE2's {@code SpatialStorageCellItem}
+     * implements {@code ISpatialStorageCell}, not {@code IMEStorageCell}, so a
+     * drive refuses them) — the original storage-scan gate was therefore
+     * unreachable in a real world and only passed against a test double.
+     */
+    private static boolean networkHasSpatialIoInfrastructure(final IGrid grid) {
+        if (!grid.getSpatialService().isValidRegion()) {
+            return false;
+        }
+        for (final IGridNode node : grid.getNodes()) {
+            if (node.getOwner() instanceof BlockEntity be
+                && BuiltInRegistries.BLOCK.getKey(be.getBlockState().getBlock()).equals(SPATIAL_IO_PORT_ID)) {
                 return true;
             }
         }

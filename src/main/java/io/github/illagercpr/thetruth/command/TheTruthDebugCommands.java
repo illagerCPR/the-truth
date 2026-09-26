@@ -28,7 +28,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import io.github.illagercpr.thetruth.transport.ArrivalLocator;
 
+import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * Debug-only teleport commands for M1 acceptance ("enter Certus, see terrain,
@@ -93,12 +95,30 @@ public final class TheTruthDebugCommands {
                 + " home=" + heldKey.homePos().toShortString();
         final IGridNode node = core.getActionableNode();
         final boolean networkActive = node != null && node.isActive();
+        final IGrid grid = node != null ? node.getGrid() : null;
+        final String spatialState;
+        if (grid != null) {
+            boolean portInGrid = false;
+            for (final IGridNode gridNode : grid.getNodes()) {
+                if (gridNode.getOwner() instanceof BlockEntity be
+                    && net.minecraft.core.registries.BuiltInRegistries.BLOCK
+                        .getKey(be.getBlockState().getBlock())
+                        .equals(net.minecraft.resources.ResourceLocation.parse("ae2:spatial_io_port"))) {
+                    portInGrid = true;
+                }
+            }
+            spatialState = "portInNet=" + portInGrid
+                + ", pylonRegionValid=" + grid.getSpatialService().isValidRegion();
+        } else {
+            spatialState = "n/a (no grid)";
+        }
         context.getSource().sendSuccess(() -> Component.literal(String.format(
-            "Entrance(%s) at %s: ringFormed=%s, nodeReady=%s, networkActive=%s, corePair=%s, lastCertusPos=%s, heldKey: %s",
+            "Entrance(%s) at %s: ringFormed=%s, nodeReady=%s, networkActive=%s, spatialIO[%s], corePair=%s, lastCertusPos=%s, heldKey: %s",
             side, core.getBlockPos().toShortString(),
             core.isStructureFormed(),
             core.getMainNode().isReady(),
             networkActive,
+            spatialState,
             pair, lastPos, keyState)), false);
         return 1;
     }

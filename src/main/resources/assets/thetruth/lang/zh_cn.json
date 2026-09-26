@@ -16,7 +16,7 @@
   "thetruth.message.deleted": "你的物品被未观测的世界删除了",
   "thetruth.message.entrance.not_formed": "量子环结构未成型",
   "thetruth.message.entrance.no_network": "核心未接入已供能的 ME 网络",
-  "thetruth.message.entrance.no_spatial_cell": "投递装置缺失：网络中找不到空间元件（空间 IO）",
+  "thetruth.message.entrance.no_spatial_io": "空间 IO 缺失：网络中需要存在空间 IO 端口，且空间塔阵列排布合法",
   "thetruth.message.entrance.no_power": "网络中 AE 能量不足，无法完成传输",
   "thetruth.message.entrance.no_key": "需要纠缠奇点钥匙",
   "thetruth.message.entrance.key_mismatch": "这把钥匙与核心的纠缠对不匹配",
