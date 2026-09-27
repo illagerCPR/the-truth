@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": ["thetruth:certus_sediment", "thetruth:certus_unobserved"],
+  "spawners": {
+    "type": "thetruth:residue",
+    "weight": 30,
+    "minCount": 1,
+    "maxCount": 3
+  }
+}

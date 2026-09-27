@@ -1,10 +1,12 @@
 package io.github.illagercpr.thetruth.client;
 
 import io.github.illagercpr.thetruth.TheTruth;
+import io.github.illagercpr.thetruth.client.render.CertusCreatureRenderers;
 import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.neoforged.neoforge.client.event.RegisterDimensionTransitionScreenEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
@@ -32,5 +34,14 @@ public final class TheTruthClient {
     public static void onRegisterDimensionTransitionScreens(final RegisterDimensionTransitionScreenEvent event) {
         event.registerIncomingEffect(TheTruthDimensions.CERTUS, StoredTransportScreen::incoming);
         event.registerOutgoingEffect(TheTruthDimensions.CERTUS, StoredTransportScreen::outgoing);
+    }
+
+    /** M6: models and renderers of the Certus creatures. */
+    public static void onRegisterRenderers(final EntityRenderersEvent.RegisterRenderers event) {
+        CertusCreatureRenderers.onRegisterRenderers(event);
+    }
+
+    public static void onRegisterLayerDefinitions(final EntityRenderersEvent.RegisterLayerDefinitions event) {
+        CertusCreatureRenderers.onRegisterLayerDefinitions(event);
     }
 }

@@ -137,6 +137,22 @@ public final class CertusChunkGenerator extends ChunkGenerator {
                             worldSurface.update(localX, y, localZ, residual);
                         }
                     }
+                    // M6: the deep observatory installation above the platform.
+                    if (shape.insideObservatory(worldX, worldZ)) {
+                        for (int y = ObservatoryLayout.LAYOUT_BOTTOM_Y;
+                             y < ObservatoryLayout.LAYOUT_TOP_EXCLUSIVE_Y; y++) {
+                            if (y < minY || y >= maxYExclusive) {
+                                continue;
+                            }
+                            final BlockState structure = ObservatoryLayout.stateAt(worldX, y, worldZ);
+                            if (structure != null) {
+                                final LevelChunkSection section = chunk.getSection(chunk.getSectionIndex(y));
+                                section.setBlockState(localX, y & 15, localZ, structure, false);
+                                oceanFloor.update(localX, y, localZ, structure);
+                                worldSurface.update(localX, y, localZ, structure);
+                            }
+                        }
+                    }
                 }
             }
             return chunk;

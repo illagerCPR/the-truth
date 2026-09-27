@@ -8,6 +8,7 @@ import io.github.illagercpr.thetruth.registry.TheTruthBlocks;
 import io.github.illagercpr.thetruth.registry.TheTruthChunkGenerators;
 import io.github.illagercpr.thetruth.registry.TheTruthCreativeTabs;
 import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
+import io.github.illagercpr.thetruth.registry.TheTruthEntities;
 import io.github.illagercpr.thetruth.registry.TheTruthItems;
 import io.github.illagercpr.thetruth.storage.CertusCellHandler;
 import net.minecraft.resources.ResourceLocation;
@@ -43,6 +44,7 @@ public final class TheTruth {
         TheTruthChunkGenerators.GENERATORS.register(modEventBus);
         TheTruthDataComponents.DATA_COMPONENTS.register(modEventBus);
         TheTruthAttachments.ATTACHMENTS.register(modEventBus);
+        TheTruthEntities.ENTITY_TYPES.register(modEventBus);
 
         // M5: let AE2 drives mount the Certus Cell (public registry, no mixin).
         appeng.api.storage.StorageCells.addCellHandler(CertusCellHandler.INSTANCE);
@@ -62,6 +64,13 @@ public final class TheTruth {
             modEventBus.addListener(
                 RegisterDimensionTransitionScreenEvent.class,
                 TheTruthClient::onRegisterDimensionTransitionScreens);
+            // M6: creature models and renderers.
+            modEventBus.addListener(
+                net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers.class,
+                TheTruthClient::onRegisterRenderers);
+            modEventBus.addListener(
+                net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions.class,
+                TheTruthClient::onRegisterLayerDefinitions);
         }
     }
 
@@ -90,5 +99,11 @@ public final class TheTruth {
             TheTruthBlockEntities.CERTUS_SOLIDIFIER.get(),
             (blockEntity, side) -> ((io.github.illagercpr.thetruth.blockentity.CertusSolidifierBlockEntity) blockEntity)
                 .getExternalHandler());
+        // M6: the boss's data ports yield their measurement data to AE2 import.
+        event.registerBlockEntity(
+            net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK,
+            TheTruthBlockEntities.DATA_PORT.get(),
+            (blockEntity, side) -> ((io.github.illagercpr.thetruth.blockentity.DataPortBlockEntity) blockEntity)
+                .getHandler());
     }
 }

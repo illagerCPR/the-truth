@@ -31,6 +31,12 @@ public final class TheTruthCreativeTabs {
                 output.accept(TheTruthItems.CERTUS_SOLIDIFIER.get());
                 output.accept(TheTruthItems.CERTUS_CELL.get());
                 output.accept(TheTruthItems.UMBILICAL_ANCHOR.get());
+                // M6
+                output.accept(TheTruthItems.MEASUREMENT_DATA.get());
+                output.accept(TheTruthItems.DATA_FRAGMENT.get());
+                output.accept(TheTruthItems.LAST_RECORD.get());
+                output.accept(TheTruthBlocks.MEASURER_CORE.get());
+                output.accept(TheTruthBlocks.DATA_PORT.get());
             })
             .build());
 

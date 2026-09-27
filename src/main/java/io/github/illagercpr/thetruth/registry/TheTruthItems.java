@@ -63,6 +63,19 @@ public final class TheTruthItems {
         ITEMS.register("certus_cell", () -> new CertusCellItem(
             new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
 
+    /** M6 measurement data: siphoned from the boss's data ports to overload it. */
+    public static final DeferredItem<Item> MEASUREMENT_DATA =
+        ITEMS.register("measurement_data", () -> new Item(new Item.Properties().rarity(Rarity.RARE)));
+
+    /** M6 data fragment: experience that never got written back; right-click to re-read. */
+    public static final DeferredItem<io.github.illagercpr.thetruth.item.DataFragmentItem> DATA_FRAGMENT =
+        ITEMS.register("data_fragment", () -> new io.github.illagercpr.thetruth.item.DataFragmentItem(
+            new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON)));
+
+    /** M6 narrative drop of The Last Measurer: the last record of the vanished civilization. */
+    public static final DeferredItem<Item> LAST_RECORD =
+        ITEMS.register("last_record", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+
     private TheTruthItems() {
     }
 }

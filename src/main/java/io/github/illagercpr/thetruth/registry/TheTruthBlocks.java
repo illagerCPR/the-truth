@@ -65,6 +65,14 @@ public final class TheTruthBlocks {
     public static final DeferredBlock<UmbilicalAnchorBlock> UMBILICAL_ANCHOR =
         BLOCKS.register("umbilical_anchor", UmbilicalAnchorBlock::new);
 
+    /** M6 heart of the deep observatory; wakes The Last Measurer when approached. */
+    public static final DeferredBlock<io.github.illagercpr.thetruth.block.MeasurerCoreBlock> MEASURER_CORE =
+        BLOCKS.register("measurer_core", io.github.illagercpr.thetruth.block.MeasurerCoreBlock::new);
+
+    /** M6 boss-phase-3 socket whose measurement data overloads the boss when siphoned. */
+    public static final DeferredBlock<io.github.illagercpr.thetruth.block.DataPortBlock> DATA_PORT =
+        BLOCKS.register("data_port", io.github.illagercpr.thetruth.block.DataPortBlock::new);
+
     private TheTruthBlocks() {
     }
 }

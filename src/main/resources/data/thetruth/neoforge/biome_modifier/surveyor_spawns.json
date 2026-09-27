@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": ["thetruth:certus_debris"],
+  "spawners": {
+    "type": "thetruth:surveyor",
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 1
+  }
+}

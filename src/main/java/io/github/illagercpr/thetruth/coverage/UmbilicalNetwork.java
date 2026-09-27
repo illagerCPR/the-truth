@@ -1,6 +1,8 @@
 package io.github.illagercpr.thetruth.coverage;
 
 import io.github.illagercpr.thetruth.blockentity.UmbilicalAnchorBlockEntity;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -152,6 +154,15 @@ public final class UmbilicalNetwork {
             }
         }
         return count;
+    }
+
+    /** Flat view over every registered anchor (drop data-fication, M6). */
+    public static Iterable<UmbilicalAnchorBlockEntity> allAnchors() {
+        final List<UmbilicalAnchorBlockEntity> all = new ArrayList<>();
+        for (final Set<UmbilicalAnchorBlockEntity> anchors : PAIRS.values()) {
+            all.addAll(anchors);
+        }
+        return all;
     }
 
     private UmbilicalNetwork() {

@@ -36,6 +36,18 @@ public final class TheTruthBlockEntities {
             () -> BlockEntityType.Builder.of(
                 UmbilicalAnchorBlockEntity::new, TheTruthBlocks.UMBILICAL_ANCHOR.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<io.github.illagercpr.thetruth.blockentity.MeasurerCoreBlockEntity>> MEASURER_CORE =
+        BLOCK_ENTITIES.register("measurer_core",
+            () -> BlockEntityType.Builder.of(
+                io.github.illagercpr.thetruth.blockentity.MeasurerCoreBlockEntity::new,
+                TheTruthBlocks.MEASURER_CORE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<io.github.illagercpr.thetruth.blockentity.DataPortBlockEntity>> DATA_PORT =
+        BLOCK_ENTITIES.register("data_port",
+            () -> BlockEntityType.Builder.of(
+                io.github.illagercpr.thetruth.blockentity.DataPortBlockEntity::new,
+                TheTruthBlocks.DATA_PORT.get()).build(null));
+
     private TheTruthBlockEntities() {
     }
 }

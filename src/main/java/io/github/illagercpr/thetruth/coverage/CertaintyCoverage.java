@@ -44,6 +44,9 @@ public final class CertaintyCoverage {
 
     /** True when the position is inside any coverage source of the given level. */
     public static boolean isPosCovered(final Level level, final BlockPos pos) {
+        if (ObservatoryField.isCovered(level.dimension(), pos)) {
+            return true;
+        }
         if (withinAnchorField(level, pos)) {
             return true;
         }
@@ -69,6 +72,9 @@ public final class CertaintyCoverage {
             if (anchor.isFieldActive() && distanceSq(anchor.getBlockPos(), pos) <= rangeSq(anchor)) {
                 return "anchor@" + anchor.getBlockPos().toShortString();
             }
+        }
+        if (ObservatoryField.isCovered(level.dimension(), pos)) {
+            return ObservatoryField.describe();
         }
         if (UmbilicalNetwork.isPosCovered(level, pos)) {
             return "umbilical@" + pos.toShortString();
@@ -139,6 +145,11 @@ public final class CertaintyCoverage {
 
     private static Set<CertusAnchorBlockEntity> anchorsOf(final Level level) {
         return ACTIVE_ANCHORS.computeIfAbsent(level.dimension(), key -> ConcurrentHashMap.newKeySet());
+    }
+
+    /** Read-only view of the level's registered anchors (drop data-fication, M6). */
+    public static Iterable<CertusAnchorBlockEntity> activeAnchorsOf(final Level level) {
+        return anchorsOf(level);
     }
 
     private static double distanceSq(final BlockPos a, final BlockPos b) {

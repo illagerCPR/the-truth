@@ -46,5 +46,20 @@
   "thetruth.message.umbilical.status_unbound": "未绑定——手持已绑定的纠缠奇点钥匙右键",
   "thetruth.screen.entrance.incoming": "正在重构物质形态……",
   "thetruth.screen.entrance.outgoing": "正在序列化传输体……",
-  "thetruth.screen.entrance.sub": "你正被存储并传输"
+  "thetruth.screen.entrance.sub": "你正被存储并传输",
+  "entity.thetruth.residue": "残余",
+  "entity.thetruth.surveyor": "测量者",
+  "entity.thetruth.unobserved": "未观测者",
+  "entity.thetruth.last_measurer": "最后的测量者",
+  "block.thetruth.measurer_core": "测量核心",
+  "block.thetruth.data_port": "数据端口",
+  "item.thetruth.measurement_data": "测量数据",
+  "item.thetruth.data_fragment": "数据残片",
+  "item.thetruth.last_record": "最后的记录",
+  "thetruth.message.surveyor_determined": "扫描完成：你已被确定——它们正在围猎",
+  "thetruth.message.measurer_phase_scan": "最后的测量者正在扫描——躲入阴影或网格缺口",
+  "thetruth.message.measurer_phase_summon": "最后的测量者正在召唤未被清除者，并删除场地",
+  "thetruth.message.measurer_phase_overload": "最后的测量者暴露了数据端口——把它的测量数据导入你的网络",
+  "thetruth.message.measurer_determined": "已被确定：你的物质正在被重新记录",
+  "thetruth.message.port_overload": "过载中的测量者：已导入 %s / %s 份测量数据"
 }

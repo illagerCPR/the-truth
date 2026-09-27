@@ -103,6 +103,14 @@ public final class CertusTerrainShape {
      * the boss arena stays whole.
      */
     public boolean isGridGap(final int x, final int z) {
+        return gridGapAt(x, z);
+    }
+
+    /**
+     * Static twin of {@link #isGridGap}: the grid is pure modular arithmetic,
+     * so creatures (M6 scan dodging) can test it without a noise instance.
+     */
+    public static boolean gridGapAt(final int x, final int z) {
         return !insideObservatory(x, z)
             && (Math.floorMod(x, GRID_CELL) < GRID_GAP || Math.floorMod(z, GRID_CELL) < GRID_GAP);
     }
@@ -113,7 +121,7 @@ public final class CertusTerrainShape {
     }
 
     /** Inside the observatory platform square in the unobserved layer. */
-    public boolean insideObservatory(final int x, final int z) {
+    public static boolean insideObservatory(final int x, final int z) {
         return Math.abs(x) <= OBSERVATORY_HALF_SIZE && Math.abs(z) <= OBSERVATORY_HALF_SIZE;
     }
 

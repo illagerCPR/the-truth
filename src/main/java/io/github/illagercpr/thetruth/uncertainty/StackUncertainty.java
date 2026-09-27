@@ -2,6 +2,7 @@ package io.github.illagercpr.thetruth.uncertainty;
 
 import io.github.illagercpr.thetruth.item.CertusCellItem;
 import io.github.illagercpr.thetruth.item.EntanglementKeyItem;
+import io.github.illagercpr.thetruth.item.UnformedMatterItem;
 import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
 import io.github.illagercpr.thetruth.registry.TheTruthItems;
 import java.util.List;
@@ -113,10 +114,17 @@ public final class StackUncertainty {
         return unformed;
     }
 
-    /** Keys and Certus Cells never degrade; everything else does. */
+    /**
+     * Keys and Certus Cells never degrade; already-data items (unformed
+     * matter, data fragments, the last record) stay as they are — wrapping
+     * data into data would only lose information.
+     */
     public static boolean isConvertible(final ItemStack stack) {
         return !(stack.getItem() instanceof EntanglementKeyItem)
-            && !(stack.getItem() instanceof CertusCellItem);
+            && !(stack.getItem() instanceof CertusCellItem)
+            && !(stack.getItem() instanceof UnformedMatterItem)
+            && !(stack.getItem() instanceof io.github.illagercpr.thetruth.item.DataFragmentItem)
+            && !stack.is(TheTruthItems.LAST_RECORD.get());
     }
 
     /**

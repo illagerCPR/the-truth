@@ -227,12 +227,127 @@ def certus_cell():
     return pixels
 
 
+def measurer_core():
+    """Black obsidian slab with a cyan measuring slit."""
+    rand = lcg(20260940)
+    pixels = []
+    for y in range(SIZE):
+        row = []
+        for x in range(SIZE):
+            if 6 <= x <= 9 and 6 <= y <= 9:
+                row.append((140, 240, 250))
+            else:
+                jitter = int(rand() * 10) - 5
+                row.append((16 + jitter, 18 + jitter, 22 + jitter))
+        pixels.append(row)
+    return pixels
+
+
+def data_port():
+    """Cyan socket ring on dark housing."""
+    rand = lcg(20260941)
+    pixels = []
+    for y in range(SIZE):
+        row = []
+        for x in range(SIZE):
+            d = max(abs(x - 7.5), abs(y - 7.5))
+            if d < 2.5:
+                row.append((10, 12, 16))
+            elif d < 5.5:
+                row.append((120, 230, 245))
+            else:
+                jitter = int(rand() * 12) - 6
+                row.append((30 + jitter, 40 + jitter, 48 + jitter))
+        pixels.append(row)
+    return pixels
+
+
+def measurement_data():
+    """A sliver of recorded measurement, cyan on white."""
+    pixels, _ = generic_item(20260942, (0, 0, 0), (150, 240, 250), (220, 250, 252))
+    return pixels
+
+
+def data_fragment():
+    """A shard of condensed experience, warm white."""
+    pixels, _ = generic_item(20260943, (0, 0, 0), (250, 246, 200), (170, 220, 210))
+    return pixels
+
+
+def last_record():
+    """A data tablet: dark slate with one glowing line."""
+    rand = lcg(20260944)
+    pixels = []
+    for y in range(SIZE):
+        row = []
+        for x in range(SIZE):
+            border = x in (0, SIZE - 1) or y in (0, SIZE - 1)
+            if y == 7 and 3 <= x <= 12:
+                row.append((150, 240, 250))
+            elif border:
+                row.append((40, 48, 58))
+            else:
+                jitter = int(rand() * 8) - 4
+                row.append((24 + jitter, 28 + jitter, 36 + jitter))
+        pixels.append(row)
+    return pixels
+
+
+def entity_texture(seed, base, accent):
+    """32x32 entity skin: noisy body with an accent stripe."""
+    rand = lcg(seed)
+    pixels = []
+    for y in range(32):
+        row = []
+        for x in range(32):
+            if 8 <= y <= 9:
+                row.append(accent)
+            else:
+                jitter = int(rand() * 18) - 9
+                row.append(tuple(max(0, min(255, c + jitter)) for c in base))
+        pixels.append(row)
+    return pixels
+
+
+def boss_texture(seed, base, accent):
+    """64x64 boss skin."""
+    rand = lcg(seed)
+    pixels = []
+    for y in range(64):
+        row = []
+        for x in range(64):
+            if 16 <= y <= 18:
+                row.append(accent)
+            else:
+                jitter = int(rand() * 20) - 10
+                row.append(tuple(max(0, min(255, c + jitter)) for c in base))
+        pixels.append(row)
+    return pixels
+
+
+def write_sized_png(path, pixels, size):
+    raw = b""
+    for row in pixels:
+        raw += b"\x00" + b"".join(struct.pack("BBB", *px) for px in row)
+    header = struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)
+    blob = (b"\x89PNG\r\n\x1a\n" + png_chunk(b"IHDR", header)
+            + png_chunk(b"IDAT", zlib.compress(raw)) + png_chunk(b"IEND", b""))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as handle:
+        handle.write(blob)
+
+
 if __name__ == "__main__":
-    write_png(os.path.join(ROOT, "textures", "block", "certus_stone.png"), certus_stone())
-    write_png(os.path.join(ROOT, "textures", "block", "residual_matter.png"), residual_matter())
-    write_png(os.path.join(ROOT, "textures", "block", "certus_solidifier.png"), certus_solidifier())
-    write_png(os.path.join(ROOT, "textures", "block", "umbilical_anchor.png"), umbilical_anchor())
-    write_png(os.path.join(ROOT, "textures", "item", "unformed_matter.png"), unformed_matter())
-    write_png(os.path.join(ROOT, "textures", "item", "certus_matrix.png"), certus_matrix())
-    write_png(os.path.join(ROOT, "textures", "item", "certus_core.png"), certus_core())
-    write_png(os.path.join(ROOT, "textures", "item", "certus_cell.png"), certus_cell())
+    write_png(os.path.join(ROOT, "textures", "block", "measurer_core.png"), measurer_core())
+    write_png(os.path.join(ROOT, "textures", "block", "data_port.png"), data_port())
+    write_png(os.path.join(ROOT, "textures", "item", "measurement_data.png"), measurement_data())
+    write_png(os.path.join(ROOT, "textures", "item", "data_fragment.png"), data_fragment())
+    write_png(os.path.join(ROOT, "textures", "item", "last_record.png"), last_record())
+    write_sized_png(os.path.join(ROOT, "textures", "entity", "residue.png"),
+        entity_texture(20260945, (60, 70, 78), (150, 240, 250)), 32)
+    write_sized_png(os.path.join(ROOT, "textures", "entity", "surveyor.png"),
+        entity_texture(20260946, (40, 44, 52), (230, 250, 252)), 32)
+    write_sized_png(os.path.join(ROOT, "textures", "entity", "unobserved.png"),
+        entity_texture(20260947, (14, 14, 18), (90, 110, 130)), 32)
+    write_sized_png(os.path.join(ROOT, "textures", "entity", "last_measurer.png"),
+        boss_texture(20260948, (28, 30, 40), (250, 214, 120)), 64)

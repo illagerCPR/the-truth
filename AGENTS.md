@@ -4,7 +4,7 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 
 ## 当前状态（2026-09-27）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）、M4（入口与回程）、M5（确界存储层）已完成**：M5 交付资源链（中层残差物质簇 `residual_matter`（生成纯函数 `CertusTerrainShape.isResidualClusterColumn`，≈0.5%/列）→ 挖掘掉未定形质 `unformed_matter`（`unformed_content` 组件记忆原物品，恒定 glint）→ 确界固化器 `certus_solidifier`（无 GUI 机器：`ItemHandler` capability + 手持右键；还原带内容未定形质 / 游离未定形质固化为确界结晶 `certus_matrix`；每次 200 AE + idle 2 AE/t）+ 确界元件 `certus_cell`（ME 存储：`StorageCells.addCellHandler` 公开注册；1,048,576 bytes / 256 types；内容存 `certus_cell_content` 组件永不丢，离网未定形不可读、复网恢复；`isFoil` glint + 禁嵌套）+ 确界核心 `certus_core`（M6 Boss 掉落）+ 脐带锚点 `umbilical_anchor`（手持已绑定钥匙右键配对，同 `pairId` 两锚点分属两维成对；确界端投影确定性覆盖（`UmbilicalNetwork` + `CertaintyCoverage` 接入）+ 对主世界端 FORCED chunk ticket 强加载；全存档 ≤2 对）+ M3 曲线接入（中层 randomize 时 10% 物品转未定形质（钥匙/元件豁免）；深层窗口耗尽 = 携带物溶解为未定形质实体（`lifespan=MAX`），永不静默删除）。GameTest 33 项全绿。下一批次 **M6（生物与 Boss）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）、M4（入口与回程）、M5（确界存储层）已完成**：M5 交付资源链（中层残差物质簇 `residual_matter`（生成纯函数 `CertusTerrainShape.isResidualClusterColumn`，≈0.5%/列）→ 挖掘掉未定形质 `unformed_matter`（`unformed_content` 组件记忆原物品，恒定 glint）→ 确界固化器 `certus_solidifier`（无 GUI 机器：`ItemHandler` capability + 手持右键；还原带内容未定形质 / 游离未定形质固化为确界结晶 `certus_matrix`；每次 200 AE + idle 2 AE/t）+ 确界元件 `certus_cell`（ME 存储：`StorageCells.addCellHandler` 公开注册；1,048,576 bytes / 256 types；内容存 `certus_cell_content` 组件永不丢，离网未定形不可读、复网恢复；`isFoil` glint + 禁嵌套）+ 确界核心 `certus_core`（M6 Boss 掉落）+ 脐带锚点 `umbilical_anchor`（手持已绑定钥匙右键配对，同 `pairId` 两锚点分属两维成对；确界端投影确定性覆盖（`UmbilicalNetwork` + `CertaintyCoverage` 接入）+ 对主世界端 FORCED chunk ticket 强加载；全存档 ≤2 对）+ M3 曲线接入（中层 randomize 时 10% 物品转未定形质（钥匙/元件豁免）；深层窗口耗尽 = 携带物溶解为未定形质实体（`lifespan=MAX`），永不静默删除）。GameTest 33 项全绿。**M6（生物与 Boss）已完成**：残余/测量者/未观测者三生物（激怒态、扫描可被阴影/网格缺口规避、直视石化）+「最后的测量者」三阶段 Boss（扫描固化 / 召唤与删列 / 数据端口过载——AE2 import 抽 16 份测量数据即过载死亡，掉确界核心+最后的记录）+ 深层观测台结构（纯函数布局 + 测量核心唤醒）+ 观测台覆盖豁免（M3 登记项 5 关闭）+ 掉落数据化（覆盖入网 / 覆盖无网保留 / 未覆盖消散为带记忆未定形质）+ 经验数据化（数据残片右键返还）。GameTest 41 项全绿。下一批次 **M7（终局与世界状态标记）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -99,6 +99,18 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 - 固化器类无 GUI 机器的正解：NeoForge `ItemStackHandler` 子类（`isItemValid` 限入料、override `insertItem` 让出料槽 take-only）+ `RegisterCapabilitiesEvent.registerBlockEntity(Capabilities.ItemHandler.BLOCK, BE_TYPE, provider)`——漏斗、AE2 import/export bus、玩家手持右键全走同一个 capability。
 - **验收期幽灵方块双 bug（runClient 2026-09-27）**：①per-server 注册表的 `unregister/peerOf` 必须 null 守卫 `pairId`——**vanilla 的方块移除与 chunk 卸载路径都会调 BE `setRemoved()`**，未绑定锚点在 `ConcurrentHashMap.get(null)` 抛 NPE 会把 `LevelChunk` 移除流程炸断：服务端 block state 残留 + BE 已移除 = 幽灵方块（线缆不连、更新后复原、无法再破坏）。②FORCED ticket 的释放目标必须记录在持有端字段（dimension + ChunkPos）并按记录解引用，**不能依赖 `peerOf`**——对端先死时 `peerOf == null` 会永久泄漏票（对端 chunk 永久 ENTITY_TICKING 强加载）。
 - **GameTest 全绿 ≠ 无异常**：NPE 只出现在 `runGameTestServer` 日志（关服卸载 plot 时）不计入测试结果——验收 GameTest 时必须 grep 日志 exception/NPE。
+
+## M6 核对的硬事实（2026-09-27）
+
+- **实体注册**：`EntityType.Builder.of(factory, MobCategory).sized(w,h).build(String)`；属性走 `EntityAttributeCreationEvent.put`；生成位走 **NeoForge 21.1 的 `RegisterSpawnPlacementsEvent.register(type, SpawnPlacementType, Heightmap.Types, predicate, Operation.REPLACE)`**（谓词签名 `(EntityType, ServerLevelAccessor, MobSpawnType, BlockPos, RandomSource)`）；自然生成走 `data/<ns>/neoforge/biome_modifier/*.json`（`neoforge:add_spawns`）。
+- **1.21.1 没有 `RandomFlyGoal`**——飞行游走自写（`FlyingMoveControl(mob, turn, hover)` + `FlyingPathNavigation`，`createNavigation` override）。
+- **`BlockDropsEvent` 存在**（`net.neoforged.neoforge.event.level`）：`getDrops()` 是可修改的 `List<ItemEntity>`——方块掉落数据化/替换的正规钩子；实体侧用 `LivingDropsEvent`。
+- **经验数据化钩子**：`LivingExperienceDropEvent.setDroppedExperience(0)` 后自行生成替代实体——`Player.giveExperiencePoints(int)` 做返还。
+- **`MobRenderer<T extends Mob, M extends EntityModel<T>>` 的泛型绑定**：模型基类的实体泛型必须绑定到具体实体类型（`SimpleModel<ResidueEntity>`），写 `SimpleModel<Entity>` 编译不过；1.21.1 `renderToBuffer` 第五参是 int 颜色。
+- **`ResourceLocation.withDefaultNamespace("ae2:x")` 生成 `minecraft:ae2:x` 双命名空间**（RuntimeException: Non [a-z0-9/._-] character）——带冒号的完整 id 一律 `ResourceLocation.parse(...)`。
+- **`ServerPlayerGameMode.changeGameModeForPlayer(GameType)`**（不是 changeGameMode）。
+- **GameTest mock 玩家强制 CREATIVE 且 `changeGameModeForPlayer` 改不动**——实体逻辑若依赖"玩家 creative 豁免"分支，GameTest 无法用 mock 驱动该分支（残余激怒因此不设 creative 过滤：激怒是行为反应，不是曲线豁免）。
+- GameTest 的 AABB 就近构造用 `new AABB(BlockPos).inflate(r)`（`BlockPos.offset` 是 Vec3 签名，混用编译错）。
 
 ## 设计红线（违反即打回）
 
