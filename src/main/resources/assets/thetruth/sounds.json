@@ -1,0 +1,47 @@
+{
+  "data_ingest": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "thetruth:data_ingest",
+        "stream": false
+      }
+    ]
+  },
+  "uncertainty_warning": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "thetruth:uncertainty_warning",
+        "stream": false
+      }
+    ]
+  },
+  "uncertainty_collapse": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "thetruth:uncertainty_collapse",
+        "stream": false
+      }
+    ]
+  },
+  "uncertainty_settle": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "thetruth:uncertainty_settle",
+        "stream": false
+      }
+    ]
+  },
+  "uncertainty_scramble": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "thetruth:uncertainty_scramble",
+        "stream": false
+      }
+    ]
+  }
+}

@@ -63,7 +63,7 @@
   "thetruth.message.measurer_phase_overload": "最后的测量者暴露了数据端口——把它的测量数据导入你的网络",
   "thetruth.message.measurer_determined": "已被确定：你的物质正在被重新记录",
   "thetruth.message.port_overload": "过载中的测量者：已导入 %s / %s 份测量数据",
-  "thetruth.message.endgame.brought_back": "你读出了最后的记录",
+  "thetruth.gui.solidifier.power": "网络能量：%s",
   "thetruth.message.endgame.broadcast": "世界底层传来回响：确界的真相已被带回主世界。所有 ME 存储元件浮现出一个小小的确界印记。",
   "thetruth.message.endgame.already": "真相早已被带回——世界无法再次翻转",
   "thetruth.message.endgame.wrong_dimension": "这里读不出真相——把它带回主世界"

@@ -63,7 +63,7 @@
   "thetruth.message.measurer_phase_overload": "The Last Measurer exposes its data ports — siphon it into your network",
   "thetruth.message.measurer_determined": "Determined: your matter is being re-recorded",
   "thetruth.message.port_overload": "Overloading the measurer: %s / %s units siphoned",
-  "thetruth.message.endgame.brought_back": "You read out The Last Record",
+  "thetruth.gui.solidifier.power": "Network power: %s",
   "thetruth.message.endgame.broadcast": "An echo from beneath the world: the truth of Certus has been brought back to the Overworld. Every ME storage cell now wears a tiny Certus mark.",
   "thetruth.message.endgame.already": "The truth has already been brought back — the world cannot be flipped twice",
   "thetruth.message.endgame.wrong_dimension": "The truth cannot be read out here — bring it back to the Overworld"

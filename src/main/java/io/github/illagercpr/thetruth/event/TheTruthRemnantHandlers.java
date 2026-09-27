@@ -66,4 +66,28 @@ public final class TheTruthRemnantHandlers {
                 Component.translatable("thetruth.message.entrance.spawn_denied"), true);
         }
     }
+
+    /**
+     * M8 (docs/00 §8): unformed matter inside Certus leaks a data-stream mote
+     * from time to time — the dropped item reads as "unwritten data", not as
+     * an ordinary stack. One mote per ~32 ticks per entity keeps the network
+     * cost negligible even in a full-death drop pile.
+     */
+    @SubscribeEvent
+    public static void onItemEntityTick(final net.neoforged.neoforge.event.tick.EntityTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ItemEntity entity)
+            || !(entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
+            return;
+        }
+        if (serverLevel.dimension() != TheTruthDimensions.CERTUS) {
+            return;
+        }
+        if (!entity.getItem().is(io.github.illagercpr.thetruth.registry.TheTruthItems.UNFORMED_MATTER.get())) {
+            return;
+        }
+        if (entity.getRandom().nextInt(32) != 0) {
+            return;
+        }
+        io.github.illagercpr.thetruth.certus.DataStreamEffects.idleMote(serverLevel, entity.position());
+    }
 }

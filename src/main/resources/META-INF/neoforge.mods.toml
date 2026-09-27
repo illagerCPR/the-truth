@@ -6,6 +6,7 @@ license="LGPL-3.0"
 modId="thetruth"
 version="${mod_version}"
 displayName="The Truth"
+logoFile="thetruth_logo.png"
 description='''An Applied Energistics 2 endgame expansion: enter Certus, the shattered homeworld of the ME civilization, where matter is unstable and only the recorded truly exists.'''
 authors="illagerCPR"
 

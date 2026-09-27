@@ -1,8 +1,6 @@
 package io.github.illagercpr.thetruth.item;
 
 import javax.annotation.Nonnull;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -32,8 +30,10 @@ public class DataFragmentItem extends Item {
         if (!level.isClientSide) {
             player.giveExperiencePoints(XP_PER_FRAGMENT);
             player.getCooldowns().addCooldown(this, 10);
-            level.playSound(null, player.blockPosition(),
-                SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.8F, 1.6F);
+            final net.minecraft.server.level.ServerLevel serverLevel =
+                (net.minecraft.server.level.ServerLevel) level;
+            io.github.illagercpr.thetruth.certus.DataStreamEffects.ingest(
+                serverLevel, player.position());
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }

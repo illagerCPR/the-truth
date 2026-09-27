@@ -24,9 +24,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
@@ -101,6 +103,11 @@ public class CertusSolidifierBlockEntity extends BlockEntity implements IActionH
             this.items.setStackInSlot(1, result);
         } else {
             output.grow(result.getCount());
+        }
+        // M8: the write-back shows as a data-stream pulse (docs/00 §8).
+        if (this.level instanceof ServerLevel serverLevel) {
+            io.github.illagercpr.thetruth.certus.DataStreamEffects.ingest(
+                serverLevel, Vec3.atCenterOf(this.worldPosition));
         }
     }
 
@@ -188,6 +195,27 @@ public class CertusSolidifierBlockEntity extends BlockEntity implements IActionH
     /** The capability handed to hoppers, AE2 buses and similar automation. */
     public IItemHandler getExternalHandler() {
         return this.items;
+    }
+
+    // ------------------------------------------------------------- GUI readout
+
+    /** Stored AE power of the owning network, for the GUI readout (M8). */
+    public double getStoredAEPower() {
+        final IGrid grid = this.mainNode.getGrid();
+        return grid == null ? 0.0 : grid.getEnergyService().getStoredPower();
+    }
+
+    /** Whether the owning network is powered, for the GUI readout (M8). */
+    public boolean isNetworkPowered() {
+        final IGrid grid = this.mainNode.getGrid();
+        return grid != null && grid.getEnergyService().isNetworkPowered();
+    }
+
+    /** Standard "still usable" check for the GUI session. */
+    public boolean isUsableBy(final Player player) {
+        return !this.isRemoved()
+            && player.distanceToSqr(this.worldPosition.getX() + 0.5,
+                this.worldPosition.getY() + 0.5, this.worldPosition.getZ() + 0.5) <= 64.0;
     }
 
     // ------------------------------------------------------------- AE2 node

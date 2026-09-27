@@ -3,6 +3,7 @@ package io.github.illagercpr.thetruth.block;
 import io.github.illagercpr.thetruth.blockentity.CertusSolidifierBlockEntity;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -76,9 +77,14 @@ public class CertusSolidifierBlock extends Block implements EntityBlock {
                 }
                 return InteractionResult.FAIL;
             }
-            final ItemStack taken = player.isShiftKeyDown()
-                ? solidifier.extractInput()
-                : solidifier.extractOutput();
+            if (!player.isShiftKeyDown()) {
+                // M8: bare right hand opens the GUI (docs/02 M8 decision 5).
+                player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                    (id, inventory, p) -> new io.github.illagercpr.thetruth.gui.CertusSolidifierMenu(id, inventory, solidifier),
+                    Component.translatable("block.thetruth.certus_solidifier")), pos);
+                return InteractionResult.SUCCESS;
+            }
+            final ItemStack taken = solidifier.extractOutput();
             if (!taken.isEmpty()) {
                 if (!player.getInventory().add(taken)) {
                     Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, taken);

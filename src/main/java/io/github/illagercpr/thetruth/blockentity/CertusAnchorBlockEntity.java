@@ -59,10 +59,49 @@ public class CertusAnchorBlockEntity extends BlockEntity implements IActionHost,
         return mainNode.isReady() && mainNode.isActive();
     }
 
+    /**
+     * Field state as known on this side (M8): the client never runs the node,
+     * so the active flag is mirrored through the update tag for the field-edge
+     * renderer. The server always evaluates the live node.
+     */
+    public boolean isFieldActiveForRender() {
+        return level != null && level.isClientSide() ? this.clientFieldActive : isFieldActive();
+    }
+
+    /** Mirrors the active flag to the client via the block entity update. */
+    private void syncFieldActive() {
+        setChanged();
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(),
+                net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+        }
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(final HolderLookup.Provider registries) {
+        final CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("field_active", isFieldActive());
+        return tag;
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener>
+        getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void handleUpdateTag(final CompoundTag tag, final HolderLookup.Provider registries) {
+        this.clientFieldActive = tag.getBoolean("field_active");
+    }
+
     /** Coverage radius of this anchor's field, in blocks. */
     public double fieldRange() {
         return FIELD_RANGE;
     }
+
+    /** Client mirror of {@link #isFieldActive()} (synced via the update tag). */
+    private boolean clientFieldActive;
 
     @Override
     public IGridNode getActionableNode() {
@@ -114,13 +153,13 @@ public class CertusAnchorBlockEntity extends BlockEntity implements IActionHost,
         mainNode.loadFromNBT(tag);
     }
 
-    /** Stateless listener; state changes only mark the BE dirty. */
+    /** Stateless listener; state changes mark the BE dirty and re-sync the flag. */
     private static final class AnchorNodeListener implements IGridNodeListener<CertusAnchorBlockEntity> {
 
         @Override
         public void onStateChanged(final CertusAnchorBlockEntity owner, final IGridNode node,
                                    final IGridNodeListener.State state) {
-            owner.setChanged();
+            owner.syncFieldActive();
         }
 
         @Override

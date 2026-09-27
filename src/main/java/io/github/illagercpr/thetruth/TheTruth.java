@@ -34,6 +34,11 @@ public final class TheTruth {
     public static final String MOD_ID = "thetruth";
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    /** Builds a namespaced id under this mod; the single id factory of the mod. */
+    public static ResourceLocation id(final String path) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    }
+
     public TheTruth(final IEventBus modEventBus, final ModContainer modContainer) {
         LOGGER.info("The Truth {} initialized", modContainer.getModInfo().getVersion());
 
@@ -45,6 +50,10 @@ public final class TheTruth {
         TheTruthDataComponents.DATA_COMPONENTS.register(modEventBus);
         TheTruthAttachments.ATTACHMENTS.register(modEventBus);
         TheTruthEntities.ENTITY_TYPES.register(modEventBus);
+        // M8: synthesized "data" audio, the data-stream particle, the solidifier GUI.
+        io.github.illagercpr.thetruth.registry.TheTruthSounds.SOUNDS.register(modEventBus);
+        io.github.illagercpr.thetruth.registry.TheTruthParticles.PARTICLES.register(modEventBus);
+        io.github.illagercpr.thetruth.registry.TheTruthMenus.MENUS.register(modEventBus);
 
         // M5: let AE2 drives mount the Certus Cell (public registry, no mixin).
         appeng.api.storage.StorageCells.addCellHandler(CertusCellHandler.INSTANCE);
@@ -81,6 +90,14 @@ public final class TheTruth {
             modEventBus.addListener(
                 net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent.class,
                 TheTruthClient::onRegisterItemDecorations);
+            // M8: the solidifier GUI screen.
+            modEventBus.addListener(
+                net.neoforged.neoforge.client.event.RegisterMenuScreensEvent.class,
+                TheTruthClient::onRegisterMenuScreens);
+            // M8: the data-stream particle sprites.
+            modEventBus.addListener(
+                net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent.class,
+                TheTruthClient::onRegisterParticleProviders);
         }
     }
 

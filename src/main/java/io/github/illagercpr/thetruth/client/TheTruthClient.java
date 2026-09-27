@@ -28,6 +28,8 @@ public final class TheTruthClient {
 
     public static void onRegisterGuiLayers(final RegisterGuiLayersEvent event) {
         event.registerAboveAll(CertusUncertaintyOverlay.layerId(), new CertusUncertaintyOverlay());
+        // M8: the low-density Certus scanline (docs/00 §8 optional item).
+        event.registerAboveAll(CertusScanlineOverlay.layerId(), new CertusScanlineOverlay());
     }
 
     /** M4: the "stored and transmitted" cross-dimension transition screen. */
@@ -39,6 +41,13 @@ public final class TheTruthClient {
     /** M6: models and renderers of the Certus creatures. */
     public static void onRegisterRenderers(final EntityRenderersEvent.RegisterRenderers event) {
         CertusCreatureRenderers.onRegisterRenderers(event);
+        // M8: the "written sector" edge rings of the anchor fields.
+        event.registerBlockEntityRenderer(
+            io.github.illagercpr.thetruth.registry.TheTruthBlockEntities.CERTUS_ANCHOR.get(),
+            io.github.illagercpr.thetruth.client.render.CertusFieldEdgeRenderer.CertusAnchor::new);
+        event.registerBlockEntityRenderer(
+            io.github.illagercpr.thetruth.registry.TheTruthBlockEntities.UMBILICAL_ANCHOR.get(),
+            io.github.illagercpr.thetruth.client.render.CertusFieldEdgeRenderer.UmbilicalAnchor::new);
     }
 
     public static void onRegisterLayerDefinitions(final EntityRenderersEvent.RegisterLayerDefinitions event) {
@@ -49,5 +58,19 @@ public final class TheTruthClient {
     public static void onRegisterItemDecorations(
             final net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent event) {
         CertusItemDecorations.onRegisterItemDecorations(event);
+    }
+
+    /** M8: the solidifier GUI screen + the data-stream particle renderer. */
+    public static void onRegisterMenuScreens(
+            final net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        event.register(io.github.illagercpr.thetruth.registry.TheTruthMenus.CERTUS_SOLIDIFIER.get(),
+            io.github.illagercpr.thetruth.gui.CertusSolidifierScreen::new);
+    }
+
+    /** M8: the data-stream mote sprites. */
+    public static void onRegisterParticleProviders(
+            final net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(io.github.illagercpr.thetruth.registry.TheTruthParticles.DATA_STREAM.get(),
+            DataStreamParticle.Provider::new);
     }
 }

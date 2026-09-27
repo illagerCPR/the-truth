@@ -87,10 +87,52 @@ public class UmbilicalAnchorBlockEntity extends BlockEntity implements IActionHo
         if (this.level instanceof ServerLevel serverLevel) {
             UmbilicalNetwork.register(this);
         }
+        syncFieldActive();
     }
 
     public boolean isNodeActive() {
         return this.mainNode.isReady() && this.mainNode.isActive();
+    }
+
+    /**
+     * Field state as known on this side (M8): the client never runs the node
+     * or the pair registry, so the active flag is mirrored through the update
+     * tag for the field-edge renderer.
+     */
+    public boolean isFieldActiveForRender() {
+        return this.level != null && this.level.isClientSide()
+            ? this.clientFieldActive
+            : UmbilicalNetwork.isFieldActive(this);
+    }
+
+    private boolean clientFieldActive;
+
+    /** Mirrors the active flag to the client via the block entity update. */
+    private void syncFieldActive() {
+        setChanged();
+        if (this.level instanceof ServerLevel serverLevel) {
+            serverLevel.sendBlockUpdated(this.worldPosition, getBlockState(), getBlockState(),
+                net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+        }
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(final HolderLookup.Provider registries) {
+        final CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("field_active", !this.level.isClientSide()
+            && UmbilicalNetwork.isFieldActive(this));
+        return tag;
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener>
+        getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void handleUpdateTag(final CompoundTag tag, final HolderLookup.Provider registries) {
+        this.clientFieldActive = tag.getBoolean("field_active");
     }
 
     // ------------------------------------------------------------- lifecycle
@@ -201,7 +243,7 @@ public class UmbilicalAnchorBlockEntity extends BlockEntity implements IActionHo
         @Override
         public void onStateChanged(final UmbilicalAnchorBlockEntity owner, final IGridNode node,
                                    final IGridNodeListener.State state) {
-            owner.setChanged();
+            owner.syncFieldActive();
         }
 
         @Override

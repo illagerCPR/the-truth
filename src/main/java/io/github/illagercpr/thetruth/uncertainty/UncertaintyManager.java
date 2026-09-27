@@ -6,7 +6,6 @@ import io.github.illagercpr.thetruth.registry.TheTruthAttachments;
 import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -73,13 +72,13 @@ public final class UncertaintyManager {
                 next = next.withWarningTicks(0).withUncertainty(UncertaintyCurve.SALVAGE_UNCERTAINTY);
                 final Inventory inventory = player.getInventory();
                 StackUncertainty.restore(inventory);
-                sound(player, SoundEvents.AMETHYST_BLOCK_CHIME, 1.0F);
+                sound(player, io.github.illagercpr.thetruth.registry.TheTruthSounds.UNCERTAINTY_SETTLE.get(), 1.0F);
                 message(player, "thetruth.message.salvaged", true);
             } else if (next.uncertainty() < UncertaintyCurve.RECOVER_THRESHOLD
                 && StackUncertainty.hasIndeterminateStacks(inventory(player))) {
                 // Back under the threshold: sizes settle back to their records.
                 StackUncertainty.restore(inventory(player));
-                sound(player, SoundEvents.AMETHYST_BLOCK_CHIME, 1.0F);
+                sound(player, io.github.illagercpr.thetruth.registry.TheTruthSounds.UNCERTAINTY_SETTLE.get(), 1.0F);
                 message(player, "thetruth.message.restored", true);
             }
             if (next.uncertainty() > 0) {
@@ -94,11 +93,15 @@ public final class UncertaintyManager {
                     // M5: the salvage window expired — matter leaves as
                     // unformed data at the player's feet (never despawns).
                     StackUncertainty.dissolveToUnformed(inventory(player), player.level());
-                    sound(player, SoundEvents.WARDEN_SONIC_BOOM, 1.0F);
+                    sound(player, io.github.illagercpr.thetruth.registry.TheTruthSounds.UNCERTAINTY_COLLAPSE.get(), 1.0F);
+                    if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                        io.github.illagercpr.thetruth.certus.DataStreamEffects.ingestMotes(
+                            serverLevel, player.position());
+                    }
                     message(player, "thetruth.message.deleted", false);
                 } else {
                     next = next.withWarningTicks(left);
-                    sound(player, SoundEvents.WARDEN_HEARTBEAT, 1.5F);
+                    sound(player, io.github.illagercpr.thetruth.registry.TheTruthSounds.UNCERTAINTY_WARNING.get(), 1.5F);
                     message(player, "thetruth.message.warning_tick",
                         Component.literal(String.valueOf(ceilSeconds(left))), true);
                 }
@@ -116,13 +119,13 @@ public final class UncertaintyManager {
                     StackUncertainty.convertSomeToUnformed(inventory(player), player.getRandom());
                     next = next.withNextRandomizeAt(
                         player.level().getGameTime() + UncertaintyCurve.RANDOMIZE_INTERVAL_TICKS);
-                    sound(player, SoundEvents.AMETHYST_CLUSTER_BREAK, 1.0F);
+                    sound(player, io.github.illagercpr.thetruth.registry.TheTruthSounds.UNCERTAINTY_SCRAMBLE.get(), 1.0F);
                     message(player, "thetruth.message.randomized", true);
                 }
                 if (layer == UncertaintyCurve.Layer.DEEP
                     && next.uncertainty() >= UncertaintyCurve.DEEP_DELETE_THRESHOLD) {
                     next = next.withWarningTicks(UncertaintyCurve.DEEP_WARNING_TICKS);
-                    sound(player, SoundEvents.WARDEN_HEARTBEAT, 1.5F);
+                    sound(player, io.github.illagercpr.thetruth.registry.TheTruthSounds.UNCERTAINTY_WARNING.get(), 1.5F);
                     message(player, "thetruth.message.warning_open", true);
                 }
             }

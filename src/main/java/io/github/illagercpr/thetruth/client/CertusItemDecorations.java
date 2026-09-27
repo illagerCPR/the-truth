@@ -18,19 +18,18 @@ import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
 /**
  * The Certus mark on ME storage cells (M7, docs/00 §9): after the truth has
  * been brought back, every acknowledged ME storage cell renders a small
- * geometric quartz-glow mark in the top-right of its icon — a detail only
- * players who went through the endgame can read.
+ * quartz-glow mark in the top-right of its icon — a detail only players who
+ * went through the endgame can read. M8 replaces the geometric fill with the
+ * dedicated mark texture ({@code textures/item/certus_mark.png}).
  *
  * <p>Driven by the client mirror of the server flag ({@link EndgameSync}) and
- * the shared gate ({@link MarkedStorageCells#isMarkedCell}). Pure geometry:
- * no texture asset until M8 art.
+ * the shared gate ({@link MarkedStorageCells#isMarkedCell}).
  */
 @OnlyIn(Dist.CLIENT)
 public final class CertusItemDecorations {
 
-    /** Quartz-glow aqua of the mark frame and its bright core. */
-    private static final int MARK_COLOR = 0xFF7FDFCF;
-    private static final int MARK_CORE = 0xFFE9FFF8;
+    /** The mark texture: a 4x4 hollow square with a bright core and glow ring. */
+    private static final ResourceLocation MARK_TEXTURE = TheTruth.id("textures/item/certus_mark.png");
 
     private CertusItemDecorations() {
     }
@@ -59,21 +58,15 @@ public final class CertusItemDecorations {
     }
 
     /**
-     * A 3x3 hollow square with a bright core at the icon's top-right corner.
-     * Returns false (nothing rendered) while the world is unmarked.
+     * Blits the mark texture over the icon's top-right corner. Returns false
+     * (nothing rendered) while the world is unmarked.
      */
     private static boolean renderMark(final GuiGraphics graphics, final Font font,
                                       final ItemStack stack, final int xOffset, final int yOffset) {
         if (!EndgameSync.clientTruthBroughtBack || !MarkedStorageCells.isMarkedCell(stack)) {
             return false;
         }
-        final int x = xOffset + 12;
-        final int y = yOffset + 2;
-        graphics.fill(x, y, x + 3, y + 1, MARK_COLOR);
-        graphics.fill(x, y + 2, x + 3, y + 3, MARK_COLOR);
-        graphics.fill(x, y + 1, x + 1, y + 2, MARK_COLOR);
-        graphics.fill(x + 2, y + 1, x + 3, y + 2, MARK_COLOR);
-        graphics.fill(x + 1, y + 1, x + 2, y + 2, MARK_CORE);
+        graphics.blit(MARK_TEXTURE, xOffset + 8, yOffset, 0, 0, 8, 8, 8, 8);
         return true;
     }
 }
