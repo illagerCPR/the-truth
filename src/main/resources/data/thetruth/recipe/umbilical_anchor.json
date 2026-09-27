@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "MEM",
+    "EPE",
+    "MEM"
+  ],
+  "key": {
+    "M": { "item": "thetruth:certus_matrix" },
+    "E": { "item": "minecraft:iron_ingot" },
+    "P": { "item": "minecraft:ender_pearl" }
+  },
+  "result": {
+    "id": "thetruth:umbilical_anchor",
+    "count": 1
+  }
+}

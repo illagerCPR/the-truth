@@ -24,6 +24,13 @@ public final class TheTruthCreativeTabs {
                 output.accept(TheTruthItems.CERTUS_FRAME.get());
                 output.accept(TheTruthItems.QUANTUM_ENTRANCE.get());
                 output.accept(TheTruthItems.ENTANGLEMENT_KEY.get());
+                output.accept(TheTruthItems.RESIDUAL_MATTER.get());
+                output.accept(TheTruthItems.UNFORMED_MATTER.get());
+                output.accept(TheTruthItems.CERTUS_MATRIX.get());
+                output.accept(TheTruthItems.CERTUS_CORE.get());
+                output.accept(TheTruthItems.CERTUS_SOLIDIFIER.get());
+                output.accept(TheTruthItems.CERTUS_CELL.get());
+                output.accept(TheTruthItems.UMBILICAL_ANCHOR.get());
             })
             .build());
 

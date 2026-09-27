@@ -3,7 +3,9 @@ package io.github.illagercpr.thetruth.registry;
 import io.github.illagercpr.thetruth.TheTruth;
 import io.github.illagercpr.thetruth.block.CertusAnchorBlock;
 import io.github.illagercpr.thetruth.block.CertusFrameBlock;
+import io.github.illagercpr.thetruth.block.CertusSolidifierBlock;
 import io.github.illagercpr.thetruth.block.QuantumEntranceBlock;
+import io.github.illagercpr.thetruth.block.UmbilicalAnchorBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -43,6 +45,25 @@ public final class TheTruthBlocks {
     /** M4 bottom-center block of the quantum ring: binds keys, moves players. */
     public static final DeferredBlock<QuantumEntranceBlock> QUANTUM_ENTRANCE =
         BLOCKS.register("quantum_entrance", QuantumEntranceBlock::new);
+
+    /**
+     * M5 residual matter: single-block clusters on top of the sediment slab.
+     * Mining it drops unformed matter ("matter data that was never written").
+     */
+    public static final DeferredBlock<Block> RESIDUAL_MATTER = BLOCKS.registerSimpleBlock(
+        "residual_matter",
+        BlockBehaviour.Properties.of()
+            .mapColor(MapColor.COLOR_PURPLE)
+            .strength(1.5F, 6.0F)
+            .sound(SoundType.AMETHYST));
+
+    /** M5 machine that writes unformed data back into certain instances. */
+    public static final DeferredBlock<CertusSolidifierBlock> CERTUS_SOLIDIFIER =
+        BLOCKS.register("certus_solidifier", CertusSolidifierBlock::new);
+
+    /** M5 paired anchor extending the Overworld network's coverage into Certus. */
+    public static final DeferredBlock<UmbilicalAnchorBlock> UMBILICAL_ANCHOR =
+        BLOCKS.register("umbilical_anchor", UmbilicalAnchorBlock::new);
 
     private TheTruthBlocks() {
     }

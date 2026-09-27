@@ -110,10 +110,13 @@ public final class CertusChunkGenerator extends ChunkGenerator {
             final Heightmap oceanFloor = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
             final Heightmap worldSurface = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
             final BlockState stone = TheTruthBlocks.CERTUS_STONE.value().defaultBlockState();
+            final BlockState residual = TheTruthBlocks.RESIDUAL_MATTER.value().defaultBlockState();
 
             for (int localX = 0; localX < 16; localX++) {
                 for (int localZ = 0; localZ < 16; localZ++) {
-                    final List<int[]> spans = shape.columnSpans(baseX + localX, baseZ + localZ);
+                    final int worldX = baseX + localX;
+                    final int worldZ = baseZ + localZ;
+                    final List<int[]> spans = shape.columnSpans(worldX, worldZ);
                     for (int[] span : spans) {
                         final int bottom = Math.max(span[0], minY);
                         final int top = Math.min(span[1], maxYExclusive - 1);
@@ -122,6 +125,16 @@ public final class CertusChunkGenerator extends ChunkGenerator {
                             section.setBlockState(localX, y & 15, localZ, stone, false);
                             oceanFloor.update(localX, y, localZ, stone);
                             worldSurface.update(localX, y, localZ, stone);
+                        }
+                    }
+                    // M5: residual matter clusters on top of the sediment slab.
+                    if (shape.isResidualClusterColumn(worldX, worldZ)) {
+                        final int y = shape.residualClusterY(worldX, worldZ);
+                        if (y >= minY && y < maxYExclusive) {
+                            final LevelChunkSection section = chunk.getSection(chunk.getSectionIndex(y));
+                            section.setBlockState(localX, y & 15, localZ, residual, false);
+                            oceanFloor.update(localX, y, localZ, residual);
+                            worldSurface.update(localX, y, localZ, residual);
                         }
                     }
                 }

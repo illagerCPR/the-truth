@@ -2,12 +2,14 @@ package io.github.illagercpr.thetruth.gametest;
 
 import io.github.illagercpr.thetruth.TheTruth;
 import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
+import io.github.illagercpr.thetruth.registry.TheTruthItems;
 import io.github.illagercpr.thetruth.uncertainty.StackUncertainty;
 import io.github.illagercpr.thetruth.uncertainty.UncertaintyCurve;
 import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -84,6 +86,30 @@ public final class TheTruthUncertaintyTests {
         check(helper, !slots.get(0).has(TheTruthDataComponents.UNCERTAIN_COUNT.get()),
             "restore must clear the marker");
         check(helper, slots.get(1).getCount() == 32, "second stack must restore to its record");
+        helper.succeed();
+    }
+
+    @GameTest(template = "smoke")
+    public static void certusDeepDissolveConvertsToUnformed(final GameTestHelper helper) {
+        final NonNullList<ItemStack> slots = NonNullList.withSize(3, ItemStack.EMPTY);
+        slots.set(0, new ItemStack(Items.DIAMOND, 64));
+        slots.set(1, new ItemStack(TheTruthItems.ENTANGLEMENT_KEY.get()));
+        slots.set(2, ItemStack.EMPTY);
+
+        // Pure-list conversion (no level entities): diamonds degrade, keys are exempt.
+        StackUncertainty.convertSomeToUnformed(slots, RandomSource.create(7L));
+        int converted = 0;
+        for (final ItemStack stack : slots) {
+            if (stack.is(TheTruthItems.UNFORMED_MATTER.get())) {
+                converted++;
+                final ItemStack content = io.github.illagercpr.thetruth.item.UnformedMatterItem.getContent(stack);
+                check(helper, content.is(Items.DIAMOND),
+                    "converted matter must remember the original stack");
+            }
+        }
+        final boolean keySurvived = slots.get(1).getItem() instanceof io.github.illagercpr.thetruth.item.EntanglementKeyItem;
+        check(helper, keySurvived, "the entanglement key must never degrade");
+        check(helper, converted <= 1, "at most the diamond could have converted, got " + converted);
         helper.succeed();
     }
 

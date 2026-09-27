@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "MMM",
+    "MCM",
+    "MMM"
+  ],
+  "key": {
+    "M": { "item": "thetruth:certus_matrix" },
+    "C": { "item": "thetruth:certus_core" }
+  },
+  "result": {
+    "id": "thetruth:certus_cell",
+    "count": 1
+  }
+}

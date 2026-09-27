@@ -22,7 +22,9 @@ import appeng.api.implementations.blockentities.IWirelessAccessPoint;
  * <li>they stand inside an active {@link CertusAnchorBlockEntity} field, or</li>
  * <li>they stand inside the range of an active AE2 wireless access point
  *     ({@code isActive()} and distance &le; {@code getRange()}), reusing AE2's
- *     own wireless-coverage semantics (docs/01 section 2.3).</li>
+ *     own wireless-coverage semantics (docs/01 section 2.3), or</li>
+ * <li>the dimension-side endpoint of an umbilical cord covers them
+ *     ({@link UmbilicalNetwork}, M5).</li>
  * </ul>
  *
  * <p>Anchors self-register per level on load and unregister when removed, so
@@ -30,7 +32,7 @@ import appeng.api.implementations.blockentities.IWirelessAccessPoint;
  * AE2 API, so the check scans loaded chunk block entities around the player
  * (±{@value #ACCESS_POINT_SCAN_CHUNK_RADIUS} chunks, covering ranges up to 64
  * blocks) and never forces chunk loads. The umbilical anchor (dimension-side
- * network extension) joins this verdict in M5.
+ * network extension) joined this verdict in M5 via {@link UmbilicalNetwork}.
  */
 public final class CertaintyCoverage {
 
@@ -43,6 +45,9 @@ public final class CertaintyCoverage {
     /** True when the position is inside any coverage source of the given level. */
     public static boolean isPosCovered(final Level level, final BlockPos pos) {
         if (withinAnchorField(level, pos)) {
+            return true;
+        }
+        if (level instanceof ServerLevel && UmbilicalNetwork.isPosCovered(level, pos)) {
             return true;
         }
         return level instanceof ServerLevel serverLevel && nearActiveAccessPoint(serverLevel, pos).isPresent();
@@ -64,6 +69,9 @@ public final class CertaintyCoverage {
             if (anchor.isFieldActive() && distanceSq(anchor.getBlockPos(), pos) <= rangeSq(anchor)) {
                 return "anchor@" + anchor.getBlockPos().toShortString();
             }
+        }
+        if (UmbilicalNetwork.isPosCovered(level, pos)) {
+            return "umbilical@" + pos.toShortString();
         }
         if (level instanceof ServerLevel serverLevel) {
             final Optional<BlockPos> accessPoint = nearActiveAccessPoint(serverLevel, pos);

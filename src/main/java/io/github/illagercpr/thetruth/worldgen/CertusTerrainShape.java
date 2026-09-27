@@ -72,6 +72,12 @@ public final class CertusTerrainShape {
     private static final int SEDIMENT_TOP_MIN = 48;
     private static final int SEDIMENT_TOP_MAX = 72;
 
+    // ---- Residual matter clusters (M5). ----
+    public static final double RESIDUAL_CLUSTER_CHANCE = 0.005;
+    private static final long RESIDUAL_HASH_MODULUS = 100_000L;
+    private static final long RESIDUAL_THRESHOLD =
+        (long) (RESIDUAL_CLUSTER_CHANCE * RESIDUAL_HASH_MODULUS);
+
     public static final ResourceKey<NormalNoise.NoiseParameters> CERTUS_TERRAIN_NOISE = noiseKey("certus_terrain");
     public static final ResourceKey<NormalNoise.NoiseParameters> CERTUS_ISLANDS_NOISE = noiseKey("certus_islands");
 
@@ -138,6 +144,30 @@ public final class CertusTerrainShape {
         return Mth.clamp(
             SEDIMENT_BASE_TOP + (int) Math.round(detail * SEDIMENT_DETAIL_AMPLITUDE),
             SEDIMENT_TOP_MIN, SEDIMENT_TOP_MAX);
+    }
+
+    /**
+     * Deterministic residual-matter cluster placement (M5): a sparse sprinkle
+     * of clusters sitting on top of the sediment slab. Pure function of the
+     * column — hash of (x, z), never inside a grid gap, ~
+     * {@value #RESIDUAL_CLUSTER_CHANCE} of all columns (about 1.3 clusters per
+     * chunk). Certus resource signature: straight-edged world, deterministic
+     * deposits.
+     */
+    public boolean isResidualClusterColumn(final int x, final int z) {
+        if (isGridGap(x, z)) {
+            return false;
+        }
+        long hash = (long) x * 341873128712L + (long) z * 132897987541L;
+        hash ^= hash >>> 33;
+        hash *= 0xFF51AFD7ED558CCDL;
+        hash ^= hash >>> 33;
+        return Math.floorMod(hash, RESIDUAL_HASH_MODULUS) < RESIDUAL_THRESHOLD;
+    }
+
+    /** The y a residual cluster occupies for a column ({@code sedimentTop + 1}). */
+    public int residualClusterY(final int x, final int z) {
+        return sedimentTop(x, z) + 1;
     }
 
     /**

@@ -9,6 +9,7 @@ import io.github.illagercpr.thetruth.registry.TheTruthChunkGenerators;
 import io.github.illagercpr.thetruth.registry.TheTruthCreativeTabs;
 import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
 import io.github.illagercpr.thetruth.registry.TheTruthItems;
+import io.github.illagercpr.thetruth.storage.CertusCellHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -43,6 +44,9 @@ public final class TheTruth {
         TheTruthDataComponents.DATA_COMPONENTS.register(modEventBus);
         TheTruthAttachments.ATTACHMENTS.register(modEventBus);
 
+        // M5: let AE2 drives mount the Certus Cell (public registry, no mixin).
+        appeng.api.storage.StorageCells.addCellHandler(CertusCellHandler.INSTANCE);
+
         // AE2 discovers in-world grid node hosts through this capability; without
         // registering it, neighbouring AE2 devices can never connect to the anchor.
         modEventBus.addListener(RegisterCapabilitiesEvent.class, TheTruth::onRegisterCapabilities);
@@ -71,5 +75,20 @@ public final class TheTruth {
             appeng.api.AECapabilities.IN_WORLD_GRID_NODE_HOST,
             TheTruthBlockEntities.QUANTUM_ENTRANCE.get(),
             (blockEntity, side) -> blockEntity);
+        // M5: solidifier and umbilical anchor are grid-connected devices too.
+        event.registerBlockEntity(
+            appeng.api.AECapabilities.IN_WORLD_GRID_NODE_HOST,
+            TheTruthBlockEntities.CERTUS_SOLIDIFIER.get(),
+            (blockEntity, side) -> blockEntity);
+        event.registerBlockEntity(
+            appeng.api.AECapabilities.IN_WORLD_GRID_NODE_HOST,
+            TheTruthBlockEntities.UMBILICAL_ANCHOR.get(),
+            (blockEntity, side) -> blockEntity);
+        // M5: GUI-less machine IO for hoppers, AE2 buses and player hands.
+        event.registerBlockEntity(
+            net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK,
+            TheTruthBlockEntities.CERTUS_SOLIDIFIER.get(),
+            (blockEntity, side) -> ((io.github.illagercpr.thetruth.blockentity.CertusSolidifierBlockEntity) blockEntity)
+                .getExternalHandler());
     }
 }

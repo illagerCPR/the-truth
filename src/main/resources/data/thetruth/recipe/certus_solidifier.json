@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "MIM",
+    "IAI",
+    "MIM"
+  ],
+  "key": {
+    "M": { "item": "thetruth:certus_matrix" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "A": { "item": "minecraft:amethyst_shard" }
+  },
+  "result": {
+    "id": "thetruth:certus_solidifier",
+    "count": 1
+  }
+}

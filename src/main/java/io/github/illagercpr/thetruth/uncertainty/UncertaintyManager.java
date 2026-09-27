@@ -91,7 +91,9 @@ public final class UncertaintyManager {
                 final int left = next.warningTicksLeft() - SETTLE_INTERVAL_TICKS;
                 if (left <= 0) {
                     next = next.withWarningTicks(0).withUncertainty(0);
-                    StackUncertainty.deleteAll(inventory(player));
+                    // M5: the salvage window expired — matter leaves as
+                    // unformed data at the player's feet (never despawns).
+                    StackUncertainty.dissolveToUnformed(inventory(player), player.level());
                     sound(player, SoundEvents.WARDEN_SONIC_BOOM, 1.0F);
                     message(player, "thetruth.message.deleted", false);
                 } else {
@@ -109,6 +111,9 @@ public final class UncertaintyManager {
                     && next.uncertainty() >= UncertaintyCurve.MIDDLE_RANDOMIZE_THRESHOLD
                     && player.level().getGameTime() >= next.nextRandomizeAt()) {
                     StackUncertainty.randomize(inventory(player), player.getRandom());
+                    // M5: on top of the size shuffle, some stacks degrade into
+                    // unformed matter (restorable via the Certus Solidifier).
+                    StackUncertainty.convertSomeToUnformed(inventory(player), player.getRandom());
                     next = next.withNextRandomizeAt(
                         player.level().getGameTime() + UncertaintyCurve.RANDOMIZE_INTERVAL_TICKS);
                     sound(player, SoundEvents.AMETHYST_CLUSTER_BREAK, 1.0F);

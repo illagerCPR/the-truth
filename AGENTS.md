@@ -2,9 +2,9 @@
 
 Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2**，新增维度「确界 / Certus」（modid `thetruth`，维度 `thetruth:certus`）。
 
-## 当前状态（2026-09-26）
+## 当前状态（2026-09-27）
 
-创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）、M4（入口与回程）已完成**：M4 交付量子环多方块（3×3 竖直环：7 确界框架 + 量子入口核心，两侧同构）+ 纠缠奇点钥匙（`entanglement_pair` 数据组件，主世界核心绑定仪式扣 10,000 AE 且网络须具备空间 IO 基建（空间 IO 端口在网 + 空间塔阵列合法），重新绑定即丢钥恢复路径）+ 双向传送（去程 5,000 AE 需匹配 pair + 空间 IO 基建校验，回程免费只需成型环 + 配对钥匙——回家永远可行；落点记忆 `lastCertusPos` 双向回写「最后确界落点」+ 首次螺旋搜索 `ArrivalLocator`）+ 卡死保险（确界死亡掉落 = 命名发光数据残片永不消失；确界内设重生点被取消）+ 「被存储」过场界面（`RegisterDimensionTransitionScreenEvent` incoming/outgoing）+ `/thetruthdebug entrance` 验收读数。GameTest 22 项全绿。下一批次 **M5（确界存储层）**。权威文档在 `docs/`：
+创意与计划阶段完成；**M0（工程骨架与 CI）、M1（维度骨架）、M2（三层地形与观测周期）、M3（确定性覆盖与不稳定曲线）、M4（入口与回程）、M5（确界存储层）已完成**：M5 交付资源链（中层残差物质簇 `residual_matter`（生成纯函数 `CertusTerrainShape.isResidualClusterColumn`，≈0.5%/列）→ 挖掘掉未定形质 `unformed_matter`（`unformed_content` 组件记忆原物品，恒定 glint）→ 确界固化器 `certus_solidifier`（无 GUI 机器：`ItemHandler` capability + 手持右键；还原带内容未定形质 / 游离未定形质固化为确界结晶 `certus_matrix`；每次 200 AE + idle 2 AE/t）+ 确界元件 `certus_cell`（ME 存储：`StorageCells.addCellHandler` 公开注册；1,048,576 bytes / 256 types；内容存 `certus_cell_content` 组件永不丢，离网未定形不可读、复网恢复；`isFoil` glint + 禁嵌套）+ 确界核心 `certus_core`（M6 Boss 掉落）+ 脐带锚点 `umbilical_anchor`（手持已绑定钥匙右键配对，同 `pairId` 两锚点分属两维成对；确界端投影确定性覆盖（`UmbilicalNetwork` + `CertaintyCoverage` 接入）+ 对主世界端 FORCED chunk ticket 强加载；全存档 ≤2 对）+ M3 曲线接入（中层 randomize 时 10% 物品转未定形质（钥匙/元件豁免）；深层窗口耗尽 = 携带物溶解为未定形质实体（`lifespan=MAX`），永不静默删除）。GameTest 32 项全绿。下一批次 **M6（生物与 Boss）**。权威文档在 `docs/`：
 
 - `00-世界观创意方案.md` — 需求权威来源（机制、内容、范围收敛）
 - `01-设计红线与技术闸门.md` — 四条设计红线的实现路径与已核对结论
@@ -87,6 +87,16 @@ Minecraft **1.21.1 / NeoForge 21.1.248** 模组，前置 **Applied Energistics 2
 - 传送落点安全：复用 M1 debug 命令的螺旋搜索算法（抽为 `transport/ArrivalLocator`，`ChunkStatus.SURFACE` 预筛 + `WORLD_SURFACE_WG` heightmap + FULL 态逐列扫描），debug 命令与游戏入口共用单一来源。
 - **空间门槛修订（2026-09-26，runClient 人工验收发现）**：AE2 空间元件（`SpatialStorageCellItem implements ISpatialStorageCell`）**不是 ME 存储元件**——ME 驱动器拒收（只认 `IMEStorageCell`），只能放进空间 IO 端口，永不入 `getAvailableStacks()`；「扫网络存储找空间元件」判定真实世界不可达，GameTest 曾用替身注入验证了一个不可达状态。正确姿势：门槛判定用 `IGrid.getNodes()` 扫 BE 方块 registry id（`ae2:spatial_io_port`，不 import 内部类）+ `grid.getSpatialService().isValidRegion()`（塔阵列合法，公开 API：`hasRegion/isValidRegion/getMin/getMax/requiredPower/currentEfficiency`）。空间 IO 端口 BE **无任何 capability**（`InitCapabilityProviders` 不注册它）→ API 侧读不到端口槽位。AE2 官方最小空间基建（jar 内 guide 示例 `spatial_storage_1x1x1.snbt`）：3 根 2 格直线塔 + cable + 端口 + 供能；pylon cluster 必须直线（L 形非法），region 只由塔撑出的外接盒**收缩 1 格**定义（收缩后每维 ≥1 即合法）。**GameTest 实测新坑：`helper.setBlock` 用 defaultBlockState 放 `ae2:cable_bus` 会跳过连接计算——各方向 connections=false，cable 不暴露任何方向的节点，靠它桥接的塔全部不联网**（塔-塔、塔-核心直接相邻不受影响）。最终测试布局无 cable：3 根直线塔（Z 3 格贴核心 / Y 2 格 / X 2 格）经 `spatial_io_port` 与核心全部直接相邻，撑出 3×3×4 外接盒（收缩后 1×1×2 合法）。`SpatialPylonService.isValidRegion()` 只在网络 boot 状态翻转（`GridBootingStatusChange`）时重算——塔入网引发 reboot 后 idle 40 tick 实证足够。**GameTest 纪律：替身只许模拟真实世界可达的状态——判定逻辑的测试必须用真实方块搭建**。
 
+
+## M5 核对的硬事实（2026-09-27）
+
+- **data component 值类型禁止裸 `ItemStack`**：运行时抛 `Data components must implement equals and hashCode... Problematic class: ItemStack`——可空组语义用 vanilla `ItemContainerContents`（`CODEC`/`STREAM_CODEC`/`fromItems(List)`/`nonEmptyItems()` 全内建，不可变且实现 equals/hashCode）。
+- **AE2 自定义 ME 元件全公开 API 实测**：mod 构造期 `StorageCells.addCellHandler(ICellHandler)`；`ICellHandler.isCell/getCellInventory(ItemStack, ISaveProvider)`；`StorageCell extends MEStorage`（`insert/extract(AEKey, long, Actionable, IActionSource)` 是 default、`getAvailableStacks(KeyCounter)` 往 out 里 add、`getStatus()` → `CellState.{ABSENT,EMPTY,NOT_EMPTY,TYPES_FULL,FULL}`、`persist()`、`canFitInsideCell()`）；`IBasicCellItem` 抽象方法含 `ICellWorkbenchItem` 的 `getFuzzyMode/setFuzzyMode`（不做分区就 no-op + `isEditable=false`）；`addCellInformationToTooltip` 是 default 钩子可覆盖；内容持久化用 `GenericStack.FAULT_TOLERANT_NULLABLE_LIST_CODEC`；数量折算字节用 `AEKeyType.items().getAmountPerByte()`。
+- **`BaseEntityBlock` 有抽象 `codec()`**——附属 BE 方块用 `extends Block implements EntityBlock`（M4 模式）绕开；1.21.1 的 `useWithoutItem` 签名是 `protected InteractionResult (BlockState, Level, BlockPos, Player, BlockHitResult)`，**没有 `InteractionHand` 参数**（手要 `player.getItemInHand(InteractionHand.MAIN_HAND)`）。
+- **跨维度强加载**：`TicketType.FORCED`（ChunkPos）+ `ServerChunkCache.addRegionTicket(type, pos, 2, pos)`——distance=2 → ticket level 31 = ENTITY_TICKING（BE tick）；`ChunkMap.FORCED_TICKET_LEVEL = ChunkLevel.byStatus(FullChunkStatus.ENTITY_TICKING)` 可证；add/removeRegionTicket 对同 pos 幂等，每 tick 重发无害。
+- **GameTest `helper.destroyBlock(pos)` 只换空气不触发 loot**——loot 表测试走 `server.reloadableRegistries().getLootTable(block.getLootTable())` + `LootParams.Builder(level).withParameter(ORIGIN/BLOCK_STATE/TOOL).create(LootContextParamSets.BLOCK)`；**BLOCK 上下文缺 `BLOCK_STATE` 参数会报 "Missing required parameters"**。
+- **registry frozen 后 `new Item(...)` 抛 "Registry is already frozen"**——测试里要用注册表已注册实例（`TheTruthItems.X.get()`），不要现场 new 物品类。
+- 固化器类无 GUI 机器的正解：NeoForge `ItemStackHandler` 子类（`isItemValid` 限入料、override `insertItem` 让出料槽 take-only）+ `RegisterCapabilitiesEvent.registerBlockEntity(Capabilities.ItemHandler.BLOCK, BE_TYPE, provider)`——漏斗、AE2 import/export bus、玩家手持右键全走同一个 capability。
 
 ## 设计红线（违反即打回）
 
