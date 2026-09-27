@@ -80,9 +80,10 @@ public final class TheTruthItems {
         ITEMS.register("data_fragment", () -> new io.github.illagercpr.thetruth.item.DataFragmentItem(
             new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON)));
 
-    /** M6 narrative drop of The Last Measurer: the last record of the vanished civilization. */
-    public static final DeferredItem<Item> LAST_RECORD =
-        ITEMS.register("last_record", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    /** M6 narrative drop; M7 makes it the irreversible endgame trigger. */
+    public static final DeferredItem<io.github.illagercpr.thetruth.item.LastRecordItem> LAST_RECORD =
+        ITEMS.register("last_record", () -> new io.github.illagercpr.thetruth.item.LastRecordItem(
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
 
     private TheTruthItems() {
     }

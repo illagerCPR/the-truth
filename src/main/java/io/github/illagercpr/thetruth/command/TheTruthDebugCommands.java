@@ -59,7 +59,8 @@ public final class TheTruthDebugCommands {
                         UncertaintyCurve.CAP))
                         .executes(TheTruthDebugCommands::setUncertainty)))
                 .then(Commands.literal("reset").executes(TheTruthDebugCommands::resetUncertainty)))
-            .then(Commands.literal("entrance").executes(TheTruthDebugCommands::showEntranceState)));
+            .then(Commands.literal("entrance").executes(TheTruthDebugCommands::showEntranceState))
+            .then(Commands.literal("endgame").executes(TheTruthDebugCommands::showEndgameState)));
     }
 
     /**
@@ -120,6 +121,15 @@ public final class TheTruthDebugCommands {
             networkActive,
             spatialState,
             pair, lastPos, keyState)), false);
+        return 1;
+    }
+
+    /** M7 readout: whether this save has gone through the endgame. */
+    private static int showEndgameState(final CommandContext<CommandSourceStack> context) {
+        final boolean flipped =
+            io.github.illagercpr.thetruth.endgame.EndgameState.isUnlocked(context.getSource().getServer());
+        context.getSource().sendSuccess(
+            () -> Component.literal("Endgame: truthBroughtBack=" + flipped), false);
         return 1;
     }
 

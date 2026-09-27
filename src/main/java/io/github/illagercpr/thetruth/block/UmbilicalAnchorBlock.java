@@ -2,6 +2,7 @@ package io.github.illagercpr.thetruth.block;
 
 import io.github.illagercpr.thetruth.blockentity.UmbilicalAnchorBlockEntity;
 import io.github.illagercpr.thetruth.coverage.UmbilicalNetwork;
+import io.github.illagercpr.thetruth.endgame.EndgameState;
 import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
 import io.github.illagercpr.thetruth.registry.TheTruthItems;
 import javax.annotation.Nullable;
@@ -67,6 +68,13 @@ public class UmbilicalAnchorBlock extends Block implements EntityBlock {
         }
         final ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (held.is(TheTruthItems.ENTANGLEMENT_KEY.get())) {
+            // M7: outside Certus the cord is only acknowledged after the
+            // endgame — the world must first have read its own truth.
+            if (!EndgameState.allowsUmbilicalBinding(level)) {
+                player.displayClientMessage(
+                    Component.translatable("thetruth.message.umbilical.locked"), true);
+                return InteractionResult.FAIL;
+            }
             final var pair = held.get(TheTruthDataComponents.ENTANGLEMENT_PAIR.get());
             if (pair == null) {
                 player.displayClientMessage(

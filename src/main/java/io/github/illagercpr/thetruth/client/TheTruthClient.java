@@ -44,4 +44,10 @@ public final class TheTruthClient {
     public static void onRegisterLayerDefinitions(final EntityRenderersEvent.RegisterLayerDefinitions event) {
         CertusCreatureRenderers.onRegisterLayerDefinitions(event);
     }
+
+    /** M7: the Certus mark on ME storage cells after the endgame. */
+    public static void onRegisterItemDecorations(
+            final net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent event) {
+        CertusItemDecorations.onRegisterItemDecorations(event);
+    }
 }

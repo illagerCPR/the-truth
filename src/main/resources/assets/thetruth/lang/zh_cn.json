@@ -44,6 +44,7 @@
   "thetruth.message.umbilical.status_active": "脐带正在输送：远方网络的确定性抵达此地",
   "thetruth.message.umbilical.status_idle": "已配对，但脐带未贯通（缺供能或对端缺失）",
   "thetruth.message.umbilical.status_unbound": "未绑定——手持已绑定的纠缠奇点钥匙右键",
+  "thetruth.message.umbilical.locked": "确界的连接尚未被世界承认——把真相带回主世界",
   "thetruth.screen.entrance.incoming": "正在重构物质形态……",
   "thetruth.screen.entrance.outgoing": "正在序列化传输体……",
   "thetruth.screen.entrance.sub": "你正被存储并传输",
@@ -61,5 +62,9 @@
   "thetruth.message.measurer_phase_summon": "最后的测量者正在召唤未被清除者，并删除场地",
   "thetruth.message.measurer_phase_overload": "最后的测量者暴露了数据端口——把它的测量数据导入你的网络",
   "thetruth.message.measurer_determined": "已被确定：你的物质正在被重新记录",
-  "thetruth.message.port_overload": "过载中的测量者：已导入 %s / %s 份测量数据"
+  "thetruth.message.port_overload": "过载中的测量者：已导入 %s / %s 份测量数据",
+  "thetruth.message.endgame.brought_back": "你读出了最后的记录",
+  "thetruth.message.endgame.broadcast": "世界底层传来回响：确界的真相已被带回主世界。所有 ME 存储元件浮现出一个小小的确界印记。",
+  "thetruth.message.endgame.already": "真相早已被带回——世界无法再次翻转",
+  "thetruth.message.endgame.wrong_dimension": "这里读不出真相——把它带回主世界"
 }

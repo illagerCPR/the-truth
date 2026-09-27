@@ -44,6 +44,7 @@
   "thetruth.message.umbilical.status_active": "Umbilical active: the far network's certainty reaches this place",
   "thetruth.message.umbilical.status_idle": "Paired, but the cord is not flowing (power or peer missing)",
   "thetruth.message.umbilical.status_unbound": "Unbound — right click with a bound entanglement key",
+  "thetruth.message.umbilical.locked": "The world does not yet acknowledge this connection — bring the truth back to the Overworld",
   "thetruth.screen.entrance.incoming": "Reconstituting matter...",
   "thetruth.screen.entrance.outgoing": "Serializing traveler...",
   "thetruth.screen.entrance.sub": "You are being stored and transmitted",
@@ -61,5 +62,9 @@
   "thetruth.message.measurer_phase_summon": "The Last Measurer summons the uncleaned and deletes the arena",
   "thetruth.message.measurer_phase_overload": "The Last Measurer exposes its data ports — siphon it into your network",
   "thetruth.message.measurer_determined": "Determined: your matter is being re-recorded",
-  "thetruth.message.port_overload": "Overloading the measurer: %s / %s units siphoned"
+  "thetruth.message.port_overload": "Overloading the measurer: %s / %s units siphoned",
+  "thetruth.message.endgame.brought_back": "You read out The Last Record",
+  "thetruth.message.endgame.broadcast": "An echo from beneath the world: the truth of Certus has been brought back to the Overworld. Every ME storage cell now wears a tiny Certus mark.",
+  "thetruth.message.endgame.already": "The truth has already been brought back — the world cannot be flipped twice",
+  "thetruth.message.endgame.wrong_dimension": "The truth cannot be read out here — bring it back to the Overworld"
 }

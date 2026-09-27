@@ -49,6 +49,12 @@ public final class TheTruth {
         // M5: let AE2 drives mount the Certus Cell (public registry, no mixin).
         appeng.api.storage.StorageCells.addCellHandler(CertusCellHandler.INSTANCE);
 
+        // M7: client sync of the irreversible endgame marker (protocol is
+        // declared on both sides; the handler only ever runs on the client).
+        modEventBus.addListener(
+            net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent.class,
+            io.github.illagercpr.thetruth.endgame.EndgameSync::register);
+
         // AE2 discovers in-world grid node hosts through this capability; without
         // registering it, neighbouring AE2 devices can never connect to the anchor.
         modEventBus.addListener(RegisterCapabilitiesEvent.class, TheTruth::onRegisterCapabilities);
@@ -71,6 +77,10 @@ public final class TheTruth {
             modEventBus.addListener(
                 net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions.class,
                 TheTruthClient::onRegisterLayerDefinitions);
+            // M7: the Certus mark on ME storage cells after the endgame.
+            modEventBus.addListener(
+                net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent.class,
+                TheTruthClient::onRegisterItemDecorations);
         }
     }
 
