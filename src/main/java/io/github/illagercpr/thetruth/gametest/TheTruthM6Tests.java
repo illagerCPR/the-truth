@@ -7,6 +7,7 @@ import io.github.illagercpr.thetruth.coverage.ObservatoryField;
 import io.github.illagercpr.thetruth.entity.LastMeasurerEntity;
 import io.github.illagercpr.thetruth.entity.ResidueEntity;
 import io.github.illagercpr.thetruth.registry.TheTruthBlocks;
+import io.github.illagercpr.thetruth.registry.TheTruthCreativeTabs;
 import io.github.illagercpr.thetruth.registry.TheTruthDataComponents;
 import io.github.illagercpr.thetruth.registry.TheTruthDimensions;
 import io.github.illagercpr.thetruth.registry.TheTruthEntities;
@@ -23,6 +24,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -288,6 +290,33 @@ public final class TheTruthM6Tests {
     /** Read-only access to the package-private speed constants. */
     private static final class ResidueEntitySpeedBridge {
         private static final double CALM = 0.25D;
+    }
+
+    // -------------------------------------------------------- creative tab
+
+    /**
+     * Regression for the 2026-09-27 client crash ("pressing E crashes"): the
+     * tab used to accept bare Blocks whose {@code asItem()} is AIR, and an AIR
+     * stack's {@link ItemStack#getCount()} is 0, which NeoForge's creative-tab
+     * output rejects with "The stack count must be 1". Building the tab
+     * contents on the server replays the exact NeoForge-wrapped accept path
+     * the client runs when the inventory opens, so a bad entry now fails a
+     * GameTest instead of killing the game.
+     */
+    @GameTest(template = "smoke")
+    public static void creativeTabEntriesAreSingletonStacks(final GameTestHelper helper) {
+        final CreativeModeTab tab = TheTruthCreativeTabs.MAIN.get();
+        final CreativeModeTab.ItemDisplayParameters parameters =
+            new CreativeModeTab.ItemDisplayParameters(
+                helper.getLevel().enabledFeatures(), true, helper.getLevel().registryAccess());
+        tab.buildContents(parameters);
+        final java.util.Collection<ItemStack> entries = tab.getDisplayItems();
+        check(helper, !entries.isEmpty(), "the main tab must contain entries");
+        for (final ItemStack stack : entries) {
+            check(helper, stack.getCount() == 1 && stack.getItem() != Items.AIR,
+                "every creative entry must be a singleton real stack, got " + stack);
+        }
+        helper.succeed();
     }
 
     // ------------------------------------------------------------ helpers

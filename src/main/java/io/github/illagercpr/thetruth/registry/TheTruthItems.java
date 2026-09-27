@@ -36,6 +36,14 @@ public final class TheTruthItems {
     public static final DeferredItem<BlockItem> UMBILICAL_ANCHOR =
         ITEMS.registerSimpleBlockItem("umbilical_anchor", TheTruthBlocks.UMBILICAL_ANCHOR);
 
+    /** M6 heart of the deep observatory; wakes The Last Measurer when approached. */
+    public static final DeferredItem<BlockItem> MEASURER_CORE =
+        ITEMS.registerSimpleBlockItem("measurer_core", TheTruthBlocks.MEASURER_CORE);
+
+    /** M6 boss-phase-3 socket whose measurement data overloads the boss when siphoned. */
+    public static final DeferredItem<BlockItem> DATA_PORT =
+        ITEMS.registerSimpleBlockItem("data_port", TheTruthBlocks.DATA_PORT);
+
     /** M4 red-line-1 credential: blank until the Overworld core binds a pair. */
     public static final DeferredItem<EntanglementKeyItem> ENTANGLEMENT_KEY =
         ITEMS.register("entanglement_key", () -> new EntanglementKeyItem(

@@ -35,8 +35,8 @@ public final class TheTruthCreativeTabs {
                 output.accept(TheTruthItems.MEASUREMENT_DATA.get());
                 output.accept(TheTruthItems.DATA_FRAGMENT.get());
                 output.accept(TheTruthItems.LAST_RECORD.get());
-                output.accept(TheTruthBlocks.MEASURER_CORE.get());
-                output.accept(TheTruthBlocks.DATA_PORT.get());
+                output.accept(TheTruthItems.MEASURER_CORE.get());
+                output.accept(TheTruthItems.DATA_PORT.get());
             })
             .build());
 
