@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
@@ -31,27 +32,69 @@ public final class UmbilicalNetwork {
     private static final Map<UUID, Set<UmbilicalAnchorBlockEntity>> PAIRS = new ConcurrentHashMap<>();
 
     /**
-     * Whether an anchor in {@code dimension} may bind to {@code pairId}:
-     * a fresh pair needs a free pair slot; an existing pair needs a free
-     * anchor slot and no anchor yet in that dimension.
+     * Why an anchor in {@code dimension} may or may not bind to
+     * {@code pairId}. A fresh pair needs a free global pair slot; an existing
+     * pair needs a free anchor slot and no anchor yet in that dimension.
+     * Note a single-ended pair (one anchor bound, its peer not yet placed)
+     * already counts against the global pair budget — the binding exists.
      */
-    public static boolean canBind(final UUID pairId, final Level dimension) {
-        final Set<UmbilicalAnchorBlockEntity> anchors = PAIRS.get(pairId);
+    public enum BindVerdict {
+        OK,
+        /** This pair already has both of its anchors (one per dimension). */
+        PAIR_FULL,
+        /** The server already holds the maximum number of bound pairs. */
+        GLOBAL_LIMIT
+    }
+
+    public static BindVerdict checkBind(final UUID pairId, final Level dimension) {
+        final Set<UmbilicalAnchorBlockEntity> anchors = liveAnchors(pairId);
         if (anchors == null) {
-            return PAIRS.size() < MAX_ACTIVE_PAIRS;
+            return PAIRS.size() < MAX_ACTIVE_PAIRS ? BindVerdict.OK : BindVerdict.GLOBAL_LIMIT;
         }
         if (anchors.size() >= MAX_ANCHORS_PER_PAIR) {
-            return false;
+            return BindVerdict.PAIR_FULL;
         }
         return anchors.stream().noneMatch(
-            anchor -> anchor.getLevel() != null && anchor.getLevel().dimension() == dimension.dimension());
+            anchor -> anchor.getLevel() != null && anchor.getLevel().dimension() == dimension.dimension())
+                ? BindVerdict.OK
+                : BindVerdict.PAIR_FULL;
+    }
+
+    /** Convenience wrapper for callers that only need a yes/no verdict. */
+    public static boolean canBind(final UUID pairId, final Level dimension) {
+        return checkBind(pairId, dimension) == BindVerdict.OK;
+    }
+
+    /** The pair's anchor set with already-destroyed entries filtered out. */
+    @Nullable
+    private static Set<UmbilicalAnchorBlockEntity> liveAnchors(final UUID pairId) {
+        final Set<UmbilicalAnchorBlockEntity> anchors = PAIRS.get(pairId);
+        if (anchors == null) {
+            return null;
+        }
+        anchors.removeIf(UmbilicalAnchorBlockEntity::isRemoved);
+        if (anchors.isEmpty()) {
+            PAIRS.remove(pairId);
+            return null;
+        }
+        return anchors;
     }
 
     public static void register(final UmbilicalAnchorBlockEntity anchor) {
+        if (anchor.getPairId() == null) {
+            return;
+        }
         PAIRS.computeIfAbsent(anchor.getPairId(), id -> ConcurrentHashMap.newKeySet()).add(anchor);
     }
 
     public static void unregister(final UmbilicalAnchorBlockEntity anchor) {
+        if (anchor.getPairId() == null) {
+            // Unbound anchors are never in the registry; a null key would
+            // throw inside ConcurrentHashMap.get and blow up the caller —
+            // including vanilla's block removal / chunk unload paths
+            // (ghost blocks, runClient 2026-09-27 + GameTest shutdown log).
+            return;
+        }
         final Set<UmbilicalAnchorBlockEntity> anchors = PAIRS.get(anchor.getPairId());
         if (anchors != null) {
             anchors.remove(anchor);
@@ -63,6 +106,9 @@ public final class UmbilicalNetwork {
 
     /** The other anchor of this pair (loaded thanks to the forced ticket), or null. */
     public static UmbilicalAnchorBlockEntity peerOf(final UmbilicalAnchorBlockEntity self) {
+        if (self.getPairId() == null) {
+            return null;
+        }
         final Set<UmbilicalAnchorBlockEntity> anchors = PAIRS.get(self.getPairId());
         if (anchors == null) {
             return null;

@@ -17,9 +17,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -46,7 +48,17 @@ public class UmbilicalAnchorBlockEntity extends BlockEntity implements IActionHo
 
     @Nullable
     private UUID pairId;
-    private boolean ticketHeld;
+    /**
+     * The forced ticket this anchor currently holds, recorded as the exact
+     * (dimension, chunk) it was issued against. Release must never depend on
+     * the peer lookup: once the peer is destroyed it is gone from the
+     * registry, and a peer-driven release would leak the ticket forever
+     * (permanently force-loading the peer chunk — runClient 2026-09-27).
+     */
+    @Nullable
+    private ResourceKey<Level> ticketDimension;
+    @Nullable
+    private ChunkPos ticketChunk;
 
     private final IManagedGridNode mainNode = GridHelper.createManagedNode(this, NODE_LISTENER)
         .setInWorldNode(true)
@@ -99,8 +111,10 @@ public class UmbilicalAnchorBlockEntity extends BlockEntity implements IActionHo
         super.setRemoved();
         this.mainNode.destroy();
         if (this.level instanceof ServerLevel serverLevel) {
-            UmbilicalNetwork.unregister(this);
+            // Release before unregistering: the recorded ticket target is
+            // self-sufficient, but this order also reads clearest.
             releaseTicket();
+            UmbilicalNetwork.unregister(this);
         }
     }
 
@@ -113,34 +127,38 @@ public class UmbilicalAnchorBlockEntity extends BlockEntity implements IActionHo
      */
     public void maintainTicket() {
         if (this.level == null || !UmbilicalNetwork.isFieldActive(this)) {
-            if (this.ticketHeld) {
-                releaseTicket();
-            }
+            releaseTicket();
             return;
         }
         final UmbilicalAnchorBlockEntity peer = UmbilicalNetwork.peerOf(this);
         if (peer == null || peer.getLevel() == this.level) {
-            if (this.ticketHeld) {
-                releaseTicket();
-            }
+            releaseTicket();
             return;
         }
         if (peer.getLevel() instanceof ServerLevel peerLevel) {
             final ChunkPos peerChunk = new ChunkPos(peer.getBlockPos());
             peerLevel.getChunkSource().addRegionTicket(TicketType.FORCED, peerChunk, 2, peerChunk);
-            this.ticketHeld = true;
+            this.ticketDimension = peerLevel.dimension();
+            this.ticketChunk = peerChunk;
         }
     }
 
+    /**
+     * Releases the ticket recorded on this anchor, if any. The target comes
+     * from the record, not from the peer registry — the peer may already be
+     * destroyed (and unregistered) by the time this runs.
+     */
     private void releaseTicket() {
-        if (this.level instanceof ServerLevel serverLevel) {
-            final UmbilicalAnchorBlockEntity peer = UmbilicalNetwork.peerOf(this);
-            if (peer != null && peer.getLevel() instanceof ServerLevel peerLevel) {
-                final ChunkPos peerChunk = new ChunkPos(peer.getBlockPos());
-                peerLevel.getChunkSource().removeRegionTicket(TicketType.FORCED, peerChunk, 2, peerChunk);
+        if (this.ticketChunk != null && this.ticketDimension != null
+            && this.level instanceof ServerLevel serverLevel) {
+            final ServerLevel peerLevel = serverLevel.getServer().getLevel(this.ticketDimension);
+            if (peerLevel != null) {
+                peerLevel.getChunkSource().removeRegionTicket(
+                    TicketType.FORCED, this.ticketChunk, 2, this.ticketChunk);
             }
         }
-        this.ticketHeld = false;
+        this.ticketDimension = null;
+        this.ticketChunk = null;
     }
 
     // ------------------------------------------------------------- AE2 node

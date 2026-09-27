@@ -78,9 +78,12 @@ public class UmbilicalAnchorBlock extends Block implements EntityBlock {
                     Component.translatable("thetruth.message.umbilical.already_bound"), true);
                 return InteractionResult.FAIL;
             }
-            if (!UmbilicalNetwork.canBind(pair.pairId(), level)) {
+            final UmbilicalNetwork.BindVerdict verdict = UmbilicalNetwork.checkBind(pair.pairId(), level);
+            if (verdict != UmbilicalNetwork.BindVerdict.OK) {
                 player.displayClientMessage(
-                    Component.translatable("thetruth.message.umbilical.limit_reached"), true);
+                    Component.translatable(verdict == UmbilicalNetwork.BindVerdict.PAIR_FULL
+                        ? "thetruth.message.umbilical.limit_pair"
+                        : "thetruth.message.umbilical.limit_global"), true);
                 return InteractionResult.FAIL;
             }
             anchor.bindPair(pair.pairId());

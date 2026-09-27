@@ -289,6 +289,31 @@ public final class TheTruthStorageTests {
             .thenSucceed();
     }
 
+    @GameTest(template = "smoke")
+    public static void umbilicalFullPairReportsPairFullVerdict(final GameTestHelper helper) {
+        helper.setBlock(ANCHOR_A_POS, TheTruthBlocks.UMBILICAL_ANCHOR.get());
+        helper.setBlock(ANCHOR_B_POS, TheTruthBlocks.UMBILICAL_ANCHOR.get());
+        helper.setBlock(ANCHOR_POWER_POS, creativeCell(helper));
+        final UUID pairId = UUID.randomUUID();
+        helper.startSequence()
+            .thenIdle(40)
+            .thenExecute(() -> {
+                final UmbilicalAnchorBlockEntity a =
+                    (UmbilicalAnchorBlockEntity) helper.getBlockEntity(ANCHOR_A_POS);
+                final UmbilicalAnchorBlockEntity b =
+                    (UmbilicalAnchorBlockEntity) helper.getBlockEntity(ANCHOR_B_POS);
+                a.bindPair(pairId);
+                b.bindPair(pairId);
+            })
+            .thenIdle(1)
+            .thenExecute(() -> {
+                check(helper, UmbilicalNetwork.checkBind(pairId, helper.getLevel())
+                        == UmbilicalNetwork.BindVerdict.PAIR_FULL,
+                    "a pair with both anchors bound must report PAIR_FULL, not a global limit");
+            })
+            .thenSucceed();
+    }
+
     // ------------------------------------------------------------ helpers
 
     /** AE2 creative cell by registry id; fails the test when AE2 did not load. */
